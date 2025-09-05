@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
 export const api = axios.create({
-  baseURL: 'https://sesmt.fluxosistemas.dev.br/',
+  baseURL: 'https://ssma-gestor.fluxosistemas.com.br/api/',
 });
 
 export const queryClient = new QueryClient({

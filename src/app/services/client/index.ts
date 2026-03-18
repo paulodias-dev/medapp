@@ -8,6 +8,8 @@ import { resetPassword } from './reset-password';
 import { update } from './update';
 import { verifyToken } from './verify-token';
 
+import { changePassword } from './change-password';
+
 export const clientService = {
   auth,
   forgotPassword,
@@ -18,6 +20,7 @@ export const clientService = {
   getExamFileViewerUrl,
   getExamPdfBlob,
   update,
+  changePassword,
   masterData,
   appointment,
 };

@@ -35,6 +35,9 @@ const schema = z
     }
   });
 
+import { clientService } from '@/app/services/client';
+import { toast } from 'sonner';
+
 export function Security() {
   const [currentPassword, setCurrentPassword] = useState(true);
   const [newPassword, setNewPassword] = useState(true);
@@ -50,11 +53,21 @@ export function Security() {
     },
   });
 
-  type Exemple = z.infer<typeof schema>;
-
   const submit = useMutation({
-    mutationFn: async (value: Exemple) => {
-      console.log(value);
+    mutationFn: async (values: z.infer<typeof schema>) => {
+      return clientService.changePassword({
+        current_password: values.oldPassword,
+        new_password: values.password,
+        new_password_confirmation: values.confirmPassword,
+      });
+    },
+    onSuccess: () => {
+      toast.success('Senha atualizada com sucesso!');
+      form.reset();
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error || 'Erro ao atualizar senha.';
+      toast.error(message);
     },
   });
 

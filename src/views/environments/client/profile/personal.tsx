@@ -198,6 +198,30 @@ export function Personal() {
     setSelectedAvatarFile(file);
   }
 
+  async function handleCepBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const cep = e.target.value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        toast.error('CEP não encontrado.');
+        return;
+      }
+
+      form.setValue('public_place', data.logradouro, { shouldDirty: true });
+      form.setValue('district', data.bairro, { shouldDirty: true });
+      form.setValue('city', data.localidade, { shouldDirty: true });
+      form.setValue('state', data.uf, { shouldDirty: true });
+
+      form.setFocus('number');
+    } catch (error) {
+      toast.error('Erro ao buscar o CEP.');
+    }
+  }
+
   function handleRemoveAvatar() {
     setLocalAvatarPreview((prev) => {
       if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
@@ -447,6 +471,7 @@ export function Personal() {
                     onChange={(e) => {
                       form.setValue('zipCode', cepMask(e.target.value));
                     }}
+                    onBlur={handleCepBlur}
                     required
                   />
 

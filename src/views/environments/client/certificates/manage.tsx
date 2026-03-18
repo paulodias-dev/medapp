@@ -48,6 +48,7 @@ export function Manage({ exam }: ManageProps) {
   });
 
   const details = detailQuery.data?.data;
+  if (details) console.log('ASO Details:', details);
   const status = Number(details?.status ?? exam.status);
   const statusMeta = getStatusMeta(status);
 

@@ -124,12 +124,36 @@ export function Header() {
           <MenubarTrigger>Atestados</MenubarTrigger>
           <MenubarContent>
             <MenubarItem asChild>
-                <NavLink
-                  className="active:scale-95 aria-[current=page]:bg-primary aria-[current=page]:text-white cursor-pointer transition-all"
-                  to="/certificates">
-                  Gerenciar
-                </NavLink>
-              </MenubarItem>
+              <NavLink to="/certificates">Gerenciar Atestados</NavLink>
+            </MenubarItem>
+            <MenubarItem asChild>
+              <NavLink to="/certificate">Solicitar Novo Atestado</NavLink>
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger>Configurações</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem asChild>
+              <NavLink to="/profile/user-data">Meus Dados</NavLink>
+            </MenubarItem>
+            <MenubarItem asChild>
+              <NavLink to="/profile/security">Segurança</NavLink>
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger>Ajuda</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem asChild>
+              <Link
+                to="https://wa.me/5579981291760?text=Ol%C3%A1%2C+Preciso+de+ajuda+com%3A+"
+                target="_blank">
+                Suporte via WhatsApp
+              </Link>
+            </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
       </Menubar>

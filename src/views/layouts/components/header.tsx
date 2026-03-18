@@ -1,3 +1,4 @@
+import { clientService } from '@/app/services/client';
 import { Button } from '@/views/components/ui/button';
 import {
   DropdownMenu,
@@ -15,10 +16,19 @@ import {
   MenubarTrigger,
 } from '@/views/components/ui/menubar';
 import { ArrowRight, Lightning } from '@phosphor-icons/react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, NavLink } from 'react-router-dom';
 import { Out } from './out';
 
 export function Header() {
+  const { data: profile } = useQuery({
+    queryKey: ['profileHeaderAvatar'],
+    queryFn: clientService.verifyToken,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
+  const avatarSrc = resolveAvatarUrl(profile?.img);
+
   return (
     <div className="sticky top-0 backdrop-blur-md bg-white/30 z-[99999999]">
       <header className="p-4 flex items-center justify-between gap-2">
@@ -61,7 +71,10 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative !p-0">
                   <img
-                    src="https://avatars.githubusercontent.com/u/69989490?v=4"
+                    src={avatarSrc}
+                    onError={(event) => {
+                      event.currentTarget.src = DEFAULT_AVATAR_URL;
+                    }}
                     alt=""
                     className="h-10 w-10 rounded-xl border-2"
                   />
@@ -110,4 +123,14 @@ export function Header() {
       </Menubar>
     </div>
   );
+}
+
+const API_ORIGIN = 'https://ssma-gestor.fluxosistemas.com.br';
+const DEFAULT_AVATAR_URL = 'https://avatars.githubusercontent.com/u/69989490?v=4';
+
+function resolveAvatarUrl(img?: string | null): string {
+  if (!img || img === 'null') return DEFAULT_AVATAR_URL;
+  if (img.startsWith('http://') || img.startsWith('https://')) return img;
+
+  return `${API_ORIGIN}/${img.replace(/^\/+/, '')}`;
 }

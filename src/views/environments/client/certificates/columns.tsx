@@ -1,14 +1,13 @@
 import { Button } from '@/views/components/ui/button';
-import { GearSix } from '@phosphor-icons/react';
+import { Badge } from '@/views/components/ui/badge';
 import { CaretSortIcon } from '@radix-ui/react-icons';
 import { ColumnDef } from '@tanstack/react-table';
-import { Link } from 'react-router-dom';
 
 import { Manage } from './manage';
 
 export const columns: ColumnDef<any>[] = [
   {
-    accessorKey: 'aso',
+    accessorKey: 'aso_number',
     header: ({ column }) => {
       return (
         <Button
@@ -21,11 +20,11 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.getValue('aso')}</div>;
+      return <div className="px-3">{row.original.aso_number ?? row.original.id}</div>;
     },
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'patient_name',
     header: ({ column }) => {
       return (
         <Button
@@ -38,11 +37,11 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.getValue('name')}</div>;
+      return <div className="px-3">{row.original.patient?.name ?? '-'}</div>;
     },
   },
   {
-    accessorKey: 'phone',
+    accessorKey: 'phone1',
     header: ({ column }) => {
       return (
         <Button
@@ -55,11 +54,11 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.getValue('phone')}</div>;
+      return <div className="px-3">{row.original.patient?.phone1 ?? '-'}</div>;
     },
   },
   {
-    accessorKey: 'email',
+    accessorKey: 'patient_email',
     header: ({ column }) => {
       return (
         <Button
@@ -72,7 +71,7 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.getValue('email')}</div>;
+      return <div className="px-3">{row.original.patient?.email ?? '-'}</div>;
     },
   },
   {
@@ -89,7 +88,14 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.getValue('status')}</div>;
+      const status = row.getValue('status');
+      return (
+        <Badge
+          className="text-xs"
+          variant={status === 1 ? 'secondary' : status === 0 ? 'outline' : 'default'}>
+          {status === 1 ? 'Aprovado' : status === 0 ? 'Pendente' : 'Reprovado'}
+        </Badge>
+      );
     },
   },
   {
@@ -105,16 +111,10 @@ export const columns: ColumnDef<any>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => {
+    cell: () => {
       return (
         <div className="flex items-center justify-center gap-4">
           <Manage />
-
-          <Button size="icon" className="w-8 h-8" variant="ghost" asChild>
-            <Link to={`form/${row.original.id}`}>
-              <GearSix />
-            </Link>
-          </Button>
         </div>
       );
     },

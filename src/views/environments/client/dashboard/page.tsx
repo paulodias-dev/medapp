@@ -91,7 +91,7 @@ export function Dashboard() {
               className="max-w-64"
               placeholder="Pesquisar por atestado..."
               onChange={(event) =>
-                table.getColumn('name')?.setFilterValue(event.target.value)
+                table.getColumn('nome')?.setFilterValue(event.target.value)
               }
             />
           </div>

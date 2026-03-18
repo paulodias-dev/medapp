@@ -1,3 +1,4 @@
+import { clientService } from '@/app/services/client';
 import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
 import { InputFormItem } from '@/views/components/ui/input-form-item';
@@ -6,6 +7,8 @@ import { ArrowUpRight, Eye, EyeSlash, SpinnerGap } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import * as z from 'zod';
 
 // Validação de senha e confirmação
@@ -23,7 +26,10 @@ const schema = z
   });
 
 export function ResetPassword() {
-  const [passwordType, setPasswordType] = useState(true); // Alterna entre exibir/ocultar senha
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [passwordType, setPasswordType] = useState(true);
+  const token = searchParams.get('token');
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -33,15 +39,32 @@ export function ResetPassword() {
     },
   });
 
+  type FormData = z.infer<typeof schema>;
+
   const { mutate, isPending } = useMutation({
-    mutationFn: async (data: any) => {
-      // Simula o envio para o backend
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log('Nova senha definida:', data.password);
+    mutationFn: async (data: FormData) => {
+      if (!token) {
+        throw new Error('Token de redefinição não informado.');
+      }
+
+      return clientService.resetPassword({
+        token,
+        password: data.password,
+        password_confirmation: data.confirmPassword,
+      });
+    },
+    onSuccess: (message) => {
+      toast.success(message || 'Senha redefinida com sucesso.');
+      navigate('/auth');
+    },
+    onError: (error: Error) => {
+      toast.error('Não foi possível redefinir a senha.', {
+        description: error.message,
+      });
     },
   });
 
-  function onSubmit(data: any) {
+  function onSubmit(data: FormData) {
     mutate(data);
   }
 
@@ -93,7 +116,8 @@ export function ResetPassword() {
 
                 <Button
                   type="submit"
-                  className="w-full rounded-xl flex items-center justify-between gap-1 sm:!h-11">
+                  className="w-full rounded-xl flex items-center justify-between gap-1 sm:!h-11"
+                  disabled={isPending || !token}>
                   Atualizar Senha
                   {isPending ? (
                     <SpinnerGap className="w-5 h-5 animate-spin" />

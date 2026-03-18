@@ -20,7 +20,7 @@ export async function auth(
   const { signal } = controller;
 
   const { data } = await api.post<PatientAuthResponseProps>(
-    '/auth-patient',
+    '/pacient/auth',
     params,
     {
       signal,

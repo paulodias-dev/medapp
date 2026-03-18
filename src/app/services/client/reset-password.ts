@@ -6,6 +6,17 @@ type ResetPasswordProps = {
   password_confirmation: string;
 };
 
-export async function resetPassword(params: ResetPasswordProps): Promise<void> {
-  await api.post(`/auth/requestresetpassword`, params);
+type ResetPasswordResponse = {
+  message: string;
+};
+
+export async function resetPassword(
+  params: ResetPasswordProps,
+): Promise<string> {
+  const { data } = await api.post<ResetPasswordResponse>(
+    `/client/reset-password`,
+    params,
+  );
+
+  return data.message;
 }

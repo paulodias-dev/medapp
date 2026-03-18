@@ -1,14 +1,16 @@
 import { VerifyTokenResponse } from '@/app/models';
 import { clientService } from '@/app/services/client';
 import { cepMask, cpfCnpjMask, maskICMS, maskRGIE, phoneMask } from '@/app/utils';
+import { ProfileAvatarPicker } from '@/views/components/profile-avatar-picker';
 import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
 import { InputFormItem } from '@/views/components/ui/input-form-item';
 import { Label } from '@/views/components/ui/label';
 import { Separator } from '@/views/components/ui/separator';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AxiosError } from 'axios';
 import { SpinnerGap } from '@phosphor-icons/react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -27,6 +29,7 @@ const schema = z.object({
   phone1: z.string().min(14, 'O telefone principal é obrigatório'),
   phone2: z.string().optional(),
   email: z.string().email('Digite um e-mail válido'),
+  img: z.string().optional(),
   url: z.string().optional(),
   zipCode: z.string().min(9, 'O CEP deve ter no mínimo 9 caracteres'),
   public_place: z.string().optional(),
@@ -40,6 +43,9 @@ const schema = z.object({
 
 export function Personal() {
   const [data, setData] = useState<VerifyTokenResponse>();
+  const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(
+    null,
+  );
 
   const form = useForm<z.infer<typeof schema>>({
     mode: 'onBlur',
@@ -57,6 +63,7 @@ export function Personal() {
       phone1: '',
       phone2: '',
       email: '',
+      img: '',
       url: '',
       zipCode: '',
       public_place: '',
@@ -68,31 +75,61 @@ export function Personal() {
       ip_address: '',
     },
   });
+  const queryClient = useQueryClient();
+  const personType = form.watch('type');
+  const isPessoaJuridica = personType === 'J';
+  const avatarValue = form.watch('img');
+  const profileName = form.watch('name');
+  const avatarPreview = localAvatarPreview || resolveAvatarUrl(avatarValue);
 
   type FormData = z.infer<typeof schema>;
 
   const submit = useMutation({
     mutationFn: async (params: FormData) => {
-      try {
-        if (data) {
-          await clientService.update({ ...params, id: data.id });
-        } else {
-          toast.error('Erro: dados não carregados');
-        }
-
-        toast.success('Dados atualizados com sucesso');
-      } catch (error) {
-        toast.error('Erro ao atualizar os dados');
+      if (!data) {
+        throw new Error('Dados do perfil não carregados.');
       }
+
+      const payload = { ...params };
+
+      if (payload.type === 'F') {
+        payload.name_fantasy = '';
+        payload.legal_nature = '';
+        payload.icms = '';
+        payload.iest = '';
+        payload.municipal_registration = '';
+      }
+
+      await clientService.update({ ...payload, id: data.id });
+    },
+    onSuccess: () => {
+      toast.success('Dados atualizados com sucesso.');
+      queryClient.invalidateQueries({ queryKey: ['profileHeaderAvatar'] });
+    },
+    onError: (error) => {
+      const parsedError = parseApiError(error);
+
+      Object.entries(parsedError.fieldErrors).forEach(([field, message]) => {
+        form.setError(field as keyof FormData, {
+          type: 'server',
+          message,
+        });
+      });
+
+      toast.error('Erro ao atualizar os dados.', {
+        description: parsedError.message,
+      });
     },
   });
 
   function onSubmit(values: FormData) {
+    form.clearErrors();
     submit.mutate(values);
   }
 
   useEffect(() => {
     clientService.verifyToken().then((res) => {
+      setLocalAvatarPreview(null);
       form.setValue('type', res.type ?? '');
       form.setValue('name', res.name ?? '');
       form.setValue('name_fantasy', res.name_fantasy ?? '');
@@ -105,6 +142,7 @@ export function Personal() {
       form.setValue('phone1', res.phone1 ?? '');
       form.setValue('phone2', res.phone2 ?? '');
       form.setValue('email', res.email ?? '');
+      form.setValue('img', res.img ?? '');
       form.setValue('url', res.url ?? '');
       form.setValue('zipCode', res.zipCode ?? '');
       form.setValue('public_place', res.public_place ?? '');
@@ -118,6 +156,39 @@ export function Personal() {
       setData(res);
     });
   }, []);
+
+  useEffect(
+    () => () => {
+      if (localAvatarPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(localAvatarPreview);
+      }
+    },
+    [localAvatarPreview],
+  );
+
+  function handlePickAvatar(file: File) {
+    const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Formato inválido.', {
+        description: 'Use apenas imagens PNG, JPG ou JPEG.',
+      });
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setLocalAvatarPreview((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return previewUrl;
+    });
+  }
+
+  function handleRemoveAvatar() {
+    setLocalAvatarPreview((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return null;
+    });
+    form.setValue('img', '', { shouldDirty: true });
+  }
 
   return (
     <div className="animate-slidein200 opacity-0">
@@ -143,14 +214,14 @@ export function Personal() {
             <div className="flex gap-4">
               <Button
                 type="button"
-                variant={form.watch('type') === 'F' ? 'default' : 'outline'}
+                variant={personType === 'F' ? 'default' : 'outline'}
                 className="w-full rounded-xl"
                 onClick={() => form.setValue('type', 'F')}>
                 Pessoa Física
               </Button>
               <Button
                 type="button"
-                variant={form.watch('type') === 'J' ? 'default' : 'outline'}
+                variant={personType === 'J' ? 'default' : 'outline'}
                 className="w-full rounded-xl"
                 onClick={() => form.setValue('type', 'J')}>
                 Pessoa Jurídica
@@ -158,28 +229,41 @@ export function Personal() {
             </div>
           </div>
 
-          <InputFormItem
-            control={form.control}
-            name="name"
-            label="Nome completo"
-            placeholder="Digite o nome completo"
-            required
-          />
+          <div className="rounded-xl border p-4">
+            <ProfileAvatarPicker
+              src={avatarPreview}
+              alt={profileName || 'Avatar do perfil'}
+              onPickImage={handlePickAvatar}
+              onRemoveImage={handleRemoveAvatar}
+            />
+          </div>
 
           <InputFormItem
             control={form.control}
-            name="name_fantasy"
-            label="Nome fantasia"
-            placeholder="Digite o nome fantasia (opcional)"
+            name="name"
+            label={isPessoaJuridica ? 'Razão social' : 'Nome completo'}
+            placeholder={
+              isPessoaJuridica ? 'Digite a razão social' : 'Digite o nome completo'
+            }
+            required
           />
+
+          {isPessoaJuridica && (
+            <InputFormItem
+              control={form.control}
+              name="name_fantasy"
+              label="Nome fantasia"
+              placeholder="Digite o nome fantasia (opcional)"
+            />
+          )}
 
           <div className="flex gap-4">
             <div className="w-full flex flex-col gap-2">
               <InputFormItem
                 control={form.control}
                 name="cpf_cnpj"
-                label="CPF/CNPJ"
-                placeholder="Digite o CPF ou CNPJ"
+                label={isPessoaJuridica ? 'CNPJ' : 'CPF'}
+                placeholder={isPessoaJuridica ? 'Digite o CNPJ' : 'Digite o CPF'}
                 onChange={(e) => {
                   form.setValue('cpf_cnpj', cpfCnpjMask(e.target.value));
                 }}
@@ -191,54 +275,62 @@ export function Personal() {
               <InputFormItem
                 control={form.control}
                 name="rg_ie"
-                label="RG/IE"
+                label={isPessoaJuridica ? 'Inscrição Estadual' : 'RG'}
                 onChange={(e) => {
                   form.setValue('rg_ie', maskRGIE(e.target.value));
                 }}
-                placeholder="Digite o RG ou IE (opcional)"
+                placeholder={
+                  isPessoaJuridica
+                    ? 'Digite a inscrição estadual (opcional)'
+                    : 'Digite o RG (opcional)'
+                }
               />
             </div>
           </div>
 
-          <InputFormItem
-            control={form.control}
-            name="legal_nature"
-            label="Natureza Jurídica"
-            placeholder="Digite a natureza jurídica (opcional)"
-          />
-
-          <div className="flex gap-4">
-            <div className="w-full flex flex-col gap-2">
+          {isPessoaJuridica && (
+            <>
               <InputFormItem
                 control={form.control}
-                name="icms"
-                label="ICMS"
-                onChange={(e) => {
-                  form.setValue('icms', maskICMS(e.target.value));
-                }}
-                placeholder="Digite o ICMS (opcional)"
+                name="legal_nature"
+                label="Natureza Jurídica"
+                placeholder="Digite a natureza jurídica (opcional)"
               />
-            </div>
 
-            <div className="w-full flex flex-col gap-2">
+              <div className="flex gap-4">
+                <div className="w-full flex flex-col gap-2">
+                  <InputFormItem
+                    control={form.control}
+                    name="icms"
+                    label="ICMS"
+                    onChange={(e) => {
+                      form.setValue('icms', maskICMS(e.target.value));
+                    }}
+                    placeholder="Digite o ICMS (opcional)"
+                  />
+                </div>
+
+                <div className="w-full flex flex-col gap-2">
+                  <InputFormItem
+                    control={form.control}
+                    name="iest"
+                    label="IEST"
+                    onChange={(e) => {
+                      form.setValue('iest', maskICMS(e.target.value));
+                    }}
+                    placeholder="Digite o IEST (opcional)"
+                  />
+                </div>
+              </div>
+
               <InputFormItem
                 control={form.control}
-                name="iest"
-                label="IEST"
-                onChange={(e) => {
-                  form.setValue('iest', maskICMS(e.target.value));
-                }}
-                placeholder="Digite o IEST (opcional)"
+                name="municipal_registration"
+                label="Inscrição Municipal"
+                placeholder="Digite a inscrição municipal (opcional)"
               />
-            </div>
-          </div>
-
-          <InputFormItem
-            control={form.control}
-            name="municipal_registration"
-            label="Inscrição Municipal"
-            placeholder="Digite a inscrição municipal (opcional)"
-          />
+            </>
+          )}
 
           <div className="flex gap-4">
             <div className="w-full flex flex-col gap-2">
@@ -366,7 +458,7 @@ export function Personal() {
           />
 
           <div className="py-4 gap-2">
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" disabled={submit.isPending}>
               Enviar atualizações
               {submit.isPending && (
                 <SpinnerGap className="w-4 h-4 animate-spin" />
@@ -377,4 +469,91 @@ export function Personal() {
       </Form>
     </div>
   );
+}
+
+type ApiErrorResponse = {
+  error?: string;
+  message?: string;
+  errors?: Record<string, string[]>;
+  details?: Record<string, string[]>;
+};
+
+type ParsedApiError = {
+  message: string;
+  fieldErrors: Record<string, string>;
+};
+
+function parseApiError(error: unknown): ParsedApiError {
+  if (error instanceof AxiosError) {
+    const response = error.response?.data as ApiErrorResponse | undefined;
+    const details = response?.errors ?? response?.details;
+    const fieldErrors: Record<string, string> = {};
+
+    if (details) {
+      Object.entries(details).forEach(([field, messages]) => {
+        const firstMessage = messages?.[0];
+        if (!firstMessage) return;
+        fieldErrors[field] = normalizeFieldErrorMessage(field, firstMessage);
+      });
+
+      const firstFieldMessage = Object.values(fieldErrors)[0];
+      if (firstFieldMessage) {
+        return {
+          message: firstFieldMessage,
+          fieldErrors,
+        };
+      }
+    }
+
+    if (response?.message) {
+      return {
+        message: response.message,
+        fieldErrors,
+      };
+    }
+
+    if (response?.error) {
+      return {
+        message: response.error,
+        fieldErrors,
+      };
+    }
+  }
+
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      fieldErrors: {},
+    };
+  }
+
+  return {
+    message: 'Tente novamente.',
+    fieldErrors: {},
+  };
+}
+
+function normalizeFieldErrorMessage(field: string, message: string): string {
+  if (field === 'email' && /ja esta em uso|já está em uso|already been taken/i.test(message)) {
+    return 'Este e-mail já está cadastrado para outro usuário.';
+  }
+
+  if (
+    field === 'cpf_cnpj' &&
+    /ja esta em uso|já está em uso|already been taken|cpf|cnpj/i.test(message)
+  ) {
+    return 'Este CPF/CNPJ já está cadastrado para outro usuário.';
+  }
+
+  return message;
+}
+
+const API_ORIGIN = 'https://ssma-gestor.fluxosistemas.com.br';
+
+function resolveAvatarUrl(img?: string | null): string | undefined {
+  if (!img || img === 'null') return undefined;
+  if (img.startsWith('http://') || img.startsWith('https://')) return img;
+  if (img.startsWith('blob:') || img.startsWith('data:')) return img;
+
+  return `${API_ORIGIN}/${img.replace(/^\/+/, '')}`;
 }

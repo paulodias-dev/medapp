@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Newspaper } from '@phosphor-icons/react';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 import { Calendar } from './components/calendar';
@@ -157,13 +157,12 @@ export function DateStep() {
               </Button>
 
               <Button
-                asChild
+                type="button"
                 disabled={!selectedDate || !selectedTime}
+                onClick={() => navigate('/certificate/employee')}
                 className="w-fit rounded-xl flex items-center justify-between gap-1">
-                <Link to="/certificate/employee">
-                  Continuar
-                  <ArrowUpRight className="w-4" />
-                </Link>
+                Continuar
+                <ArrowUpRight className="w-4" />
               </Button>
             </div>
           </div>

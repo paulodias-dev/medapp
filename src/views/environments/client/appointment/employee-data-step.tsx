@@ -13,7 +13,8 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { Newspaper } from '@phosphor-icons/react';
 import { ArrowUpRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function EmployeeDataStep() {
   const navigate = useNavigate();
@@ -32,6 +33,25 @@ export function EmployeeDataStep() {
 
   const handleChange = (field: keyof typeof employee, value: string | number | null) => {
     setStepData('employee', { ...employee, [field]: value });
+  };
+
+  const isFormValid =
+    employee.cpf.trim() !== '' &&
+    employee.rg.trim() !== '' &&
+    employee.birthDate !== '' &&
+    employee.gender !== '' &&
+    employee.maritalStatus !== '' &&
+    employee.position_id !== null &&
+    employee.department_id !== null &&
+    employee.email.trim() !== '' &&
+    employee.phone.trim() !== '';
+
+  const handleContinue = () => {
+    if (!isFormValid) {
+      toast.error('Preencha todos os campos obrigatórios.');
+      return;
+    }
+    navigate('/certificate/type');
   };
 
   return (
@@ -239,12 +259,12 @@ export function EmployeeDataStep() {
               </Button>
 
               <Button
-                asChild
+                type="button"
+                onClick={handleContinue}
+                disabled={!isFormValid}
                 className="w-fit rounded-xl flex items-center justify-between gap-1">
-                <Link to="/certificate/type">
-                  Continuar
-                  <ArrowUpRight className="w-4" />
-                </Link>
+                Continuar
+                <ArrowUpRight className="w-4" />
               </Button>
             </div>
           </form>

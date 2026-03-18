@@ -22,7 +22,7 @@ export function Profile() {
     <>
       <hr className="border-b-[10px] border-[#f5f5f5]" />
 
-      <div className="container flex flex-col justify-between">
+      <div className="mx-auto w-full max-w-[1480px] px-4 pb-8">
         <header className="animate-slidein200 opacity-0 mt-6 flex items-center justify-between mb-6">
           <div>
             <h1 className="mt-2 text-2xl font-medium tracking-tight text-slate-900 dark:text-slate-100">
@@ -36,12 +36,13 @@ export function Profile() {
           <div className="flex items-center gap-2" />
         </header>
 
-        <div className="animate-slidein600 opacity-0 flex flex-1 flex-col space-y-8 overflow-auto lg:flex-row lg:space-x-12 lg:space-y-0">
-          <aside className="sticky top-0 lg:w-1/5">
+        <div className="animate-slidein600 opacity-0 flex flex-1 flex-col gap-8 overflow-auto lg:grid lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-10">
+          <aside className="lg:sticky lg:top-24 h-fit">
             <SidebarNav items={sidebarNavItems} />
           </aside>
-          <div className="w-full p-1 pr-4 lg:max-w-xl">
-            <div className="pb-16">
+
+          <div className="min-w-0 w-full pb-16">
+            <div className="w-full rounded-2xl border bg-white p-4 sm:p-6">
               <Outlet />
             </div>
           </div>

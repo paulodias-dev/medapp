@@ -6,7 +6,6 @@ import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
 import { InputFormItem } from '@/views/components/ui/input-form-item';
 import { Label } from '@/views/components/ui/label';
-import { Separator } from '@/views/components/ui/separator';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
 import { SpinnerGap } from '@phosphor-icons/react';
@@ -191,278 +190,286 @@ export function Personal() {
   }
 
   return (
-    <div className="animate-slidein200 opacity-0">
-      <div>
-        <h3 className="text-lg font-medium">Dados Pessoais</h3>
-        <p className="text-sm text-gray-400">
-          Informe o endereço de correspondência.
+    <div className="animate-slidein200 opacity-0 space-y-6">
+      <section className="rounded-2xl border bg-gradient-to-r from-slate-50 to-white p-5 sm:p-6">
+        <h3 className="text-lg font-semibold text-slate-900">Dados Pessoais</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Atualize os dados da conta e mantenha as informações de contato e
+          endereço sempre corretas.
         </p>
-      </div>
-
-      <Separator className="my-4" />
+      </section>
 
       <Form {...form}>
-        <form
-          className="w-full flex flex-col gap-6"
-          onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="flex flex-col gap-2">
-            <Label>
-              Tipo de pessoa
-              <span className="text-red-500">*</span>
-            </Label>
-
-            <div className="flex gap-4">
-              <Button
-                type="button"
-                variant={personType === 'F' ? 'default' : 'outline'}
-                className="w-full rounded-xl"
-                onClick={() => form.setValue('type', 'F')}>
-                Pessoa Física
-              </Button>
-              <Button
-                type="button"
-                variant={personType === 'J' ? 'default' : 'outline'}
-                className="w-full rounded-xl"
-                onClick={() => form.setValue('type', 'J')}>
-                Pessoa Jurídica
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-xl border p-4">
-            <ProfileAvatarPicker
-              src={avatarPreview}
-              alt={profileName || 'Avatar do perfil'}
-              onPickImage={handlePickAvatar}
-              onRemoveImage={handleRemoveAvatar}
-            />
-          </div>
-
-          <InputFormItem
-            control={form.control}
-            name="name"
-            label={isPessoaJuridica ? 'Razão social' : 'Nome completo'}
-            placeholder={
-              isPessoaJuridica ? 'Digite a razão social' : 'Digite o nome completo'
-            }
-            required
-          />
-
-          {isPessoaJuridica && (
-            <InputFormItem
-              control={form.control}
-              name="name_fantasy"
-              label="Nome fantasia"
-              placeholder="Digite o nome fantasia (opcional)"
-            />
-          )}
-
-          <div className="flex gap-4">
-            <div className="w-full flex flex-col gap-2">
-              <InputFormItem
-                control={form.control}
-                name="cpf_cnpj"
-                label={isPessoaJuridica ? 'CNPJ' : 'CPF'}
-                placeholder={isPessoaJuridica ? 'Digite o CNPJ' : 'Digite o CPF'}
-                onChange={(e) => {
-                  form.setValue('cpf_cnpj', cpfCnpjMask(e.target.value));
-                }}
-                required
+        <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
+            <aside className="h-fit rounded-2xl border bg-white p-4 xl:sticky xl:top-24">
+              <ProfileAvatarPicker
+                src={avatarPreview}
+                alt={profileName || 'Avatar do perfil'}
+                onPickImage={handlePickAvatar}
+                onRemoveImage={handleRemoveAvatar}
+                disabled={submit.isPending}
               />
-            </div>
+            </aside>
 
-            <div className="w-full flex flex-col gap-2">
-              <InputFormItem
-                control={form.control}
-                name="rg_ie"
-                label={isPessoaJuridica ? 'Inscrição Estadual' : 'RG'}
-                onChange={(e) => {
-                  form.setValue('rg_ie', maskRGIE(e.target.value));
-                }}
-                placeholder={
-                  isPessoaJuridica
-                    ? 'Digite a inscrição estadual (opcional)'
-                    : 'Digite o RG (opcional)'
-                }
-              />
-            </div>
-          </div>
-
-          {isPessoaJuridica && (
-            <>
-              <InputFormItem
-                control={form.control}
-                name="legal_nature"
-                label="Natureza Jurídica"
-                placeholder="Digite a natureza jurídica (opcional)"
-              />
-
-              <div className="flex gap-4">
-                <div className="w-full flex flex-col gap-2">
-                  <InputFormItem
-                    control={form.control}
-                    name="icms"
-                    label="ICMS"
-                    onChange={(e) => {
-                      form.setValue('icms', maskICMS(e.target.value));
-                    }}
-                    placeholder="Digite o ICMS (opcional)"
-                  />
+            <div className="space-y-6">
+              <section className="rounded-2xl border bg-white p-5">
+                <div className="mb-4">
+                  <h4 className="text-base font-semibold text-slate-900">
+                    Identificação
+                  </h4>
+                  <p className="text-sm text-slate-500">
+                    Defina o tipo da conta e os dados cadastrais principais.
+                  </p>
                 </div>
 
-                <div className="w-full flex flex-col gap-2">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="md:col-span-2">
+                    <Label>
+                      Tipo de pessoa
+                      <span className="text-red-500">*</span>
+                    </Label>
+
+                    <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                      <Button
+                        type="button"
+                        variant={personType === 'F' ? 'default' : 'outline'}
+                        className="rounded-xl"
+                        onClick={() => form.setValue('type', 'F')}>
+                        Pessoa Física
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={personType === 'J' ? 'default' : 'outline'}
+                        className="rounded-xl"
+                        onClick={() => form.setValue('type', 'J')}>
+                        Pessoa Jurídica
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <InputFormItem
+                      control={form.control}
+                      name="name"
+                      label={isPessoaJuridica ? 'Razão social' : 'Nome completo'}
+                      placeholder={
+                        isPessoaJuridica
+                          ? 'Digite a razão social'
+                          : 'Digite o nome completo'
+                      }
+                      required
+                    />
+                  </div>
+
+                  {isPessoaJuridica && (
+                    <div className="md:col-span-2">
+                      <InputFormItem
+                        control={form.control}
+                        name="name_fantasy"
+                        label="Nome fantasia"
+                        placeholder="Digite o nome fantasia (opcional)"
+                      />
+                    </div>
+                  )}
+
                   <InputFormItem
                     control={form.control}
-                    name="iest"
-                    label="IEST"
+                    name="cpf_cnpj"
+                    label={isPessoaJuridica ? 'CNPJ' : 'CPF'}
+                    placeholder={isPessoaJuridica ? 'Digite o CNPJ' : 'Digite o CPF'}
                     onChange={(e) => {
-                      form.setValue('iest', maskICMS(e.target.value));
+                      form.setValue('cpf_cnpj', cpfCnpjMask(e.target.value));
                     }}
-                    placeholder="Digite o IEST (opcional)"
+                    required
+                  />
+
+                  <InputFormItem
+                    control={form.control}
+                    name="rg_ie"
+                    label={isPessoaJuridica ? 'Inscrição Estadual' : 'RG'}
+                    onChange={(e) => {
+                      form.setValue('rg_ie', maskRGIE(e.target.value));
+                    }}
+                    placeholder={
+                      isPessoaJuridica
+                        ? 'Digite a inscrição estadual (opcional)'
+                        : 'Digite o RG (opcional)'
+                    }
+                  />
+
+                  {isPessoaJuridica && (
+                    <>
+                      <div className="md:col-span-2">
+                        <InputFormItem
+                          control={form.control}
+                          name="legal_nature"
+                          label="Natureza Jurídica"
+                          placeholder="Digite a natureza jurídica (opcional)"
+                        />
+                      </div>
+
+                      <InputFormItem
+                        control={form.control}
+                        name="icms"
+                        label="ICMS"
+                        onChange={(e) => {
+                          form.setValue('icms', maskICMS(e.target.value));
+                        }}
+                        placeholder="Digite o ICMS (opcional)"
+                      />
+
+                      <InputFormItem
+                        control={form.control}
+                        name="iest"
+                        label="IEST"
+                        onChange={(e) => {
+                          form.setValue('iest', maskICMS(e.target.value));
+                        }}
+                        placeholder="Digite o IEST (opcional)"
+                      />
+
+                      <div className="md:col-span-2">
+                        <InputFormItem
+                          control={form.control}
+                          name="municipal_registration"
+                          label="Inscrição Municipal"
+                          placeholder="Digite a inscrição municipal (opcional)"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+
+              <section className="rounded-2xl border bg-white p-5">
+                <div className="mb-4">
+                  <h4 className="text-base font-semibold text-slate-900">Contato</h4>
+                  <p className="text-sm text-slate-500">
+                    Informações de comunicação da conta.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputFormItem
+                    control={form.control}
+                    name="phone1"
+                    label="Telefone principal"
+                    placeholder="Digite o telefone principal"
+                    onChange={(e) => {
+                      form.setValue('phone1', phoneMask(e.target.value));
+                    }}
+                    required
+                  />
+
+                  <InputFormItem
+                    control={form.control}
+                    name="phone2"
+                    label="Telefone auxiliar"
+                    placeholder="Digite o telefone auxiliar (opcional)"
+                    onChange={(e) => {
+                      form.setValue('phone2', phoneMask(e.target.value));
+                    }}
+                  />
+
+                  <InputFormItem
+                    control={form.control}
+                    name="email"
+                    label="E-mail"
+                    placeholder="Digite o e-mail"
+                    required
+                  />
+
+                  <InputFormItem
+                    control={form.control}
+                    name="url"
+                    label="URL"
+                    placeholder="Digite a URL (opcional)"
                   />
                 </div>
-              </div>
+              </section>
 
-              <InputFormItem
-                control={form.control}
-                name="municipal_registration"
-                label="Inscrição Municipal"
-                placeholder="Digite a inscrição municipal (opcional)"
-              />
-            </>
-          )}
+              <section className="rounded-2xl border bg-white p-5">
+                <div className="mb-4">
+                  <h4 className="text-base font-semibold text-slate-900">Endereço</h4>
+                  <p className="text-sm text-slate-500">
+                    Dados de localização e referência.
+                  </p>
+                </div>
 
-          <div className="flex gap-4">
-            <div className="w-full flex flex-col gap-2">
-              <InputFormItem
-                control={form.control}
-                name="phone1"
-                label="Telefone principal"
-                placeholder="Digite o telefone principal"
-                onChange={(e) => {
-                  form.setValue('phone1', phoneMask(e.target.value));
-                }}
-                required
-              />
-            </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputFormItem
+                    control={form.control}
+                    name="zipCode"
+                    label="CEP"
+                    placeholder="Digite o CEP"
+                    onChange={(e) => {
+                      form.setValue('zipCode', cepMask(e.target.value));
+                    }}
+                    required
+                  />
 
-            <div className="w-full flex flex-col gap-2">
-              <InputFormItem
-                control={form.control}
-                name="phone2"
-                label="Telefone auxiliar"
-                placeholder="Digite o telefone auxiliar (opcional)"
-                onChange={(e) => {
-                  form.setValue('phone2', phoneMask(e.target.value));
-                }}
-              />
-            </div>
-          </div>
+                  <InputFormItem
+                    control={form.control}
+                    name="number"
+                    label="Número"
+                    placeholder="Digite o número"
+                    required
+                  />
 
-          <InputFormItem
-            control={form.control}
-            name="email"
-            label="E-mail"
-            placeholder="Digite o e-mail"
-            required
-          />
+                  <InputFormItem
+                    control={form.control}
+                    name="public_place"
+                    label="Logradouro"
+                    placeholder="Digite o logradouro (opcional)"
+                  />
 
-          <InputFormItem
-            control={form.control}
-            name="url"
-            label="URL"
-            placeholder="Digite a URL (opcional)"
-          />
+                  <InputFormItem
+                    control={form.control}
+                    name="complement"
+                    label="Complemento"
+                    placeholder="Digite o complemento (opcional)"
+                  />
 
-          <div className="pb-4 border-b">
-            <h3 className="text-base font-medium">Endereço</h3>
-            <p className="text-sm text-gray-400">
-              Informe o endereço de correspondência.
-            </p>
-          </div>
+                  <InputFormItem
+                    control={form.control}
+                    name="district"
+                    label="Bairro"
+                    placeholder="Digite o bairro"
+                    required
+                  />
 
-          <div className="flex gap-4">
-            <div className="w-full flex flex-col gap-2">
-              <InputFormItem
-                control={form.control}
-                name="zipCode"
-                label="CEP"
-                placeholder="Digite o CEP"
-                onChange={(e) => {
-                  form.setValue('zipCode', cepMask(e.target.value));
-                }}
-                required
-              />
-            </div>
+                  <InputFormItem
+                    control={form.control}
+                    name="city"
+                    label="Cidade"
+                    placeholder="Digite a cidade"
+                    required
+                  />
 
-            <div className="w-full flex flex-col gap-2">
-              <InputFormItem
-                control={form.control}
-                name="number"
-                label="Número"
-                placeholder="Digite o número"
-                required
-              />
+                  <InputFormItem
+                    control={form.control}
+                    name="state"
+                    label="Estado"
+                    placeholder="Digite o estado"
+                    required
+                  />
+
+                  <InputFormItem
+                    control={form.control}
+                    name="ip_address"
+                    label="Endereço IP"
+                    placeholder="Digite o endereço IP (opcional)"
+                  />
+                </div>
+              </section>
             </div>
           </div>
 
-          <InputFormItem
-            control={form.control}
-            name="public_place"
-            label="Logradouro"
-            placeholder="Digite o logradouro (opcional)"
-          />
-
-          <InputFormItem
-            control={form.control}
-            name="complement"
-            label="Complemento"
-            placeholder="Digite o complemento (opcional)"
-          />
-
-          <InputFormItem
-            control={form.control}
-            name="district"
-            label="Bairro"
-            placeholder="Digite o bairro"
-            required
-          />
-
-          <div className="flex gap-4">
-            <div className="w-full flex flex-col gap-2">
-              <InputFormItem
-                control={form.control}
-                name="city"
-                label="Cidade"
-                placeholder="Digite a cidade"
-                required
-              />
-            </div>
-
-            <div className="w-full flex flex-col gap-2">
-              <InputFormItem
-                control={form.control}
-                name="state"
-                label="Estado"
-                placeholder="Digite o estado"
-                required
-              />
-            </div>
-          </div>
-
-          <InputFormItem
-            control={form.control}
-            name="ip_address"
-            label="Endereço IP"
-            placeholder="Digite o endereço IP (opcional)"
-          />
-
-          <div className="py-4 gap-2">
+          <div className="flex justify-end border-t pt-4">
             <Button className="flex items-center gap-2" disabled={submit.isPending}>
-              Enviar atualizações
-              {submit.isPending && (
-                <SpinnerGap className="w-4 h-4 animate-spin" />
-              )}
+              Salvar alterações
+              {submit.isPending && <SpinnerGap className="h-4 w-4 animate-spin" />}
             </Button>
           </div>
         </form>

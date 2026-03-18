@@ -1,3 +1,5 @@
+import { useAppointment } from '@/app/context/appointment-context';
+import { clientService } from '@/app/services/client';
 import { Button } from '@/views/components/ui/button';
 import { Textarea } from '@/views/components/ui/textarea';
 import {
@@ -13,42 +15,44 @@ import {
   Virus,
   Wheelchair,
 } from '@phosphor-icons/react';
-import { Label } from '@radix-ui/react-dropdown-menu';
-import { ArrowUpRight } from 'lucide-react';
+import { Label } from '@/views/components/ui/label';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-const options = [
-  { value: 'admissional', icon: <UserPlus size={24} />, label: 'Admissional' },
-  { value: 'periodico', icon: <Clock size={24} />, label: 'Periódico' },
-  { value: 'demissional', icon: <UserMinus size={24} />, label: 'Demissional' },
-  {
-    value: 'retorno',
-    icon: <ArrowCircleUp size={24} />,
-    label: 'Retorno ao trabalho',
-  },
-  { value: 'psicotecnico', icon: <Brain size={24} />, label: 'Psicotécnico' },
-  { value: 'generico', icon: <FileText size={24} />, label: 'Genérico' },
-  { value: 'covid', icon: <Virus size={24} />, label: 'COVID-19' },
-  {
-    value: 'evolucao',
-    icon: <Heartbeat size={24} />,
-    label: 'Evolução médica',
-  },
-  { value: 'pcd', icon: <Wheelchair size={24} />, label: 'Avaliação PCD' },
-  {
-    value: 'risco',
-    icon: <ShieldCheck size={24} />,
-    label: 'Mudança de risco ocupacional',
-  },
-];
+const iconMap: Record<string, JSX.Element> = {
+  Admissional: <UserPlus size={24} />,
+  Periódico: <Clock size={24} />,
+  Demissional: <UserMinus size={24} />,
+  'Retorno ao trabalho': <ArrowCircleUp size={24} />,
+  Psicotécnico: <Brain size={24} />,
+  Genérico: <FileText size={24} />,
+  'COVID-19': <Virus size={24} />,
+  'Evolução médica': <Heartbeat size={24} />,
+  'Avaliação PCD': <Wheelchair size={24} />,
+  'Mudança de risco ocupacional': <ShieldCheck size={24} />,
+};
 
 export function TypeExamStep() {
   const navigate = useNavigate();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const { data: appointmentData, setStepData } = useAppointment();
+  const [selectedOption, setSelectedOption] = useState<number | null>(appointmentData.type_id);
+  const [observations, setObservations] = useState(appointmentData.observations);
 
-  const handleSelect = (value: string) => {
-    setSelectedOption(value);
+  const { data: types, isLoading } = useQuery({
+    queryKey: ['exam-types'],
+    queryFn: clientService.masterData.getExamTypes,
+  });
+
+  const handleSelect = (id: number) => {
+    setSelectedOption(id);
+    setStepData('type_id', id);
+  };
+
+  const handleContinue = () => {
+    setStepData('observations', observations);
+    navigate('/certificate/exam');
   };
 
   return (
@@ -57,9 +61,9 @@ export function TypeExamStep() {
 
       <div className="animate-slidein600 opacity-0 container max-w-[1024px] flex-auto flex flex-col py-6">
         <div className="flex items-center gap-2">
-          <Button className="rounded-xl flex items-center justify-center gap-2">
-            <p className="font-normal">6/8</p>
-          </Button>
+          <button className="bg-primary text-white rounded-xl flex items-center justify-center gap-2 px-4 py-2">
+            <p className="font-normal">4/5</p>
+          </button>
 
           <Button
             variant="outline"
@@ -80,29 +84,35 @@ export function TypeExamStep() {
           </div>
 
           <form action="" className="w-full flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {options.map((item, index) => (
-                <div
-                  key={index}
-                  className={`p-2 h-[90px] ${
-                    item.label.length > 20 && 'col-span-2'
-                  } border-2 rounded-xl cursor-pointer transition-colors ${
-                    selectedOption === item.value
-                      ? 'border-primary'
-                      : 'border-gray-100'
-                  }`}
-                  onClick={() => handleSelect(item.value)}>
-                  <button
-                    type="button"
-                    className="w-full flex flex-col justify-center gap-2">
-                    {item.icon}
-                    <p className="max-w-[150px] font-normal text-sm text-start">
-                      {item.label}
-                    </p>
-                  </button>
-                </div>
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="animate-spin text-primary" size={40} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {(types || []).map((item: any) => (
+                  <div
+                    key={item.id}
+                    className={`p-2 h-[90px] ${
+                      item.name.length > 20 && 'col-span-2'
+                    } border-2 rounded-xl cursor-pointer transition-colors ${
+                      selectedOption === item.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-100'
+                    }`}
+                    onClick={() => handleSelect(item.id)}>
+                    <button
+                      type="button"
+                      className="w-full h-full flex flex-col justify-center gap-2">
+                      {iconMap[item.name] || <FileText size={24} />}
+                      <p className="max-w-[150px] font-normal text-sm text-start leading-tight">
+                        {item.name}
+                      </p>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="w-full flex flex-col gap-2">
               <Label>
@@ -110,8 +120,10 @@ export function TypeExamStep() {
                 <span className="text-red-500">*</span>
               </Label>
               <Textarea
-                placeholder="Informe o CPF"
-                className="w-full min-h-[200px] rounded-xl"
+                placeholder="Informe observações relevantes..."
+                className="w-full min-h-[150px] rounded-xl"
+                value={observations}
+                onChange={(e) => setObservations(e.target.value)}
               />
             </div>
 
@@ -125,12 +137,12 @@ export function TypeExamStep() {
               </Button>
 
               <Button
-                asChild
+                type="button"
+                onClick={handleContinue}
+                disabled={!selectedOption}
                 className="w-fit rounded-xl flex items-center justify-between gap-1">
-                <Link to="/certificate/exam">
-                  Continuar
-                  <ArrowUpRight className="w-4" />
-                </Link>
+                Continuar
+                <ArrowUpRight className="w-4" />
               </Button>
             </div>
           </form>

@@ -2,6 +2,7 @@ import { useAuth } from '@/app/context/use-auth';
 import * as Environment from '@/views';
 import * as Layout from '@/views/layouts';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { AppointmentProvider } from '@/app/context/appointment-context';
 
 export function Router() {
   return (
@@ -21,8 +22,14 @@ export function Router() {
           <Route path="/certificates" element={<Environment.Certificates />} />
           <Route path="/newsroom" element={<Environment.News />} />
 
-          <Route path="/certificate">
-            <Route path="" element={<Navigate to="date" />} />
+          <Route
+            path="/certificate"
+            element={
+              <AppointmentProvider>
+                <Outlet />
+              </AppointmentProvider>
+            }>
+            <Route index element={<Navigate to="date" />} />
 
             <Route path="date" element={<Environment.DateStep />} />
             <Route path="employee" element={<Environment.EmployeeDataStep />} />

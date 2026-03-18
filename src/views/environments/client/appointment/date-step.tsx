@@ -1,22 +1,52 @@
+import { clientService } from '@/app/services/client';
 import { Button } from '@/views/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
 import { Newspaper } from '@phosphor-icons/react';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 
 import { Calendar } from './components/calendar';
 
+import { useAppointment } from '@/app/context/appointment-context';
+
 export function DateStep() {
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const { data: appointmentData, setStepData } = useAppointment();
+  
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    appointmentData.date ? new Date(appointmentData.date) : null
+  );
+  const [selectedTime, setSelectedTime] = useState<string | null>(appointmentData.time);
 
-  const morningHours = ['08:00', '09:00', '10:00', '11:00'];
-  const afternoonHours = ['13:00', '14:00', '15:00', '16:00'];
+  const formattedDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+
+  const { data: availableSchedules, isLoading } = useQuery({
+    queryKey: ['available-schedules', formattedDate],
+    queryFn: () => clientService.appointment.getSchedules(formattedDate!),
+    enabled: !!formattedDate,
+  });
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
+    setStepData('time', time);
   };
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedTime(null);
+    setStepData('date', format(date, 'yyyy-MM-dd'));
+    setStepData('time', null);
+  };
+
+  const scheduleList = availableSchedules || [];
+  const morningHours = scheduleList
+    .filter((s: any) => s.time < '12:00')
+    .map((s: any) => s.time);
+  const afternoonHours = scheduleList
+    .filter((s: any) => s.time >= '12:00')
+    .map((s: any) => s.time);
 
   return (
     <>
@@ -24,9 +54,9 @@ export function DateStep() {
 
       <div className="animate-slidein600 opacity-0 container max-w-[1024px] flex-auto flex flex-col py-6">
         <div className="flex items-center gap-2">
-          <Button className="rounded-xl flex items-center justify-center gap-2">
-            <p className="font-normal">1/8</p>
-          </Button>
+          <button className="bg-primary text-white rounded-xl flex items-center justify-center gap-2 px-4 py-2">
+            <p className="font-normal">1/5</p>
+          </button>
 
           <Button
             variant="outline"
@@ -46,46 +76,65 @@ export function DateStep() {
                     day: '2-digit',
                     month: '2-digit',
                   })}`
-                : 'Selecione uma data'}
+                : 'Selecione uma data no calendário'}
             </p>
 
-            <div>
-              <h2 className="text-lg py-2 border-b font-semibold">Manhã</h2>
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                {morningHours.map((time) => (
-                  <Button
-                    key={time}
-                    variant={selectedTime === time ? 'default' : 'outline'}
-                    className="text-sm"
-                    onClick={() => handleTimeSelect(time)}>
-                    {time}
-                  </Button>
-                ))}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="animate-spin text-primary" size={40} />
               </div>
+            ) : selectedDate ? (
+              <div>
+                {morningHours.length > 0 && (
+                  <>
+                    <h2 className="text-lg py-2 border-b font-semibold">Manhã</h2>
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {morningHours.map((time: string) => (
+                        <Button
+                          key={time}
+                          variant={selectedTime === time ? 'default' : 'outline'}
+                          className="text-sm"
+                          onClick={() => handleTimeSelect(time)}>
+                          {time}
+                        </Button>
+                      ))}
+                    </div>
+                  </>
+                )}
 
-              <h2 className="text-lg py-2 border-b font-semibold mt-4">
-                Tarde
-              </h2>
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                {afternoonHours.map((time) => (
-                  <Button
-                    key={time}
-                    variant={selectedTime === time ? 'default' : 'outline'}
-                    className="text-sm"
-                    onClick={() => handleTimeSelect(time)}>
-                    {time}
-                  </Button>
-                ))}
+                {afternoonHours.length > 0 && (
+                  <>
+                    <h2 className="text-lg py-2 border-b font-semibold mt-4">
+                      Tarde
+                    </h2>
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {afternoonHours.map((time: string) => (
+                        <Button
+                          key={time}
+                          variant={selectedTime === time ? 'default' : 'outline'}
+                          className="text-sm"
+                          onClick={() => handleTimeSelect(time)}>
+                          {time}
+                        </Button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {scheduleList.length === 0 && (
+                  <p className="text-center text-gray-400 py-10">Nenhum horário disponível para esta data.</p>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center justify-center py-10">
+                <p className="text-gray-400">Aguardando seleção de data...</p>
+              </div>
+            )}
           </div>
 
-          <form action="" className="w-full max-w-[400px] flex flex-col gap-6">
+          <div className="w-full max-w-[400px] flex flex-col gap-6">
             <Calendar
-              onDateSelect={(date: Date) => {
-                setSelectedDate(date);
-                setSelectedTime(null);
-              }}
+              onDateSelect={handleDateSelect}
             />
 
             <div className="text-center">
@@ -94,7 +143,7 @@ export function DateStep() {
                   ? `Você selecionou: ${selectedDate?.toLocaleDateString(
                       'pt-BR',
                     )} às ${selectedTime}`
-                  : 'Selecione um horário para continuar'}
+                  : 'Selecione um horário disponível'}
               </p>
             </div>
 
@@ -117,7 +166,7 @@ export function DateStep() {
                 </Link>
               </Button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </>

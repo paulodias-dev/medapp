@@ -2,6 +2,8 @@ import { auth } from './auth';
 import { getExamById, getExamFileViewerUrl, getExamPdfBlob } from './exam-details';
 import { getAllExams } from './exams-list';
 import { forgotPassword } from './forgot-password';
+import * as masterData from './master-data';
+import * as appointment from './appointment';
 import { resetPassword } from './reset-password';
 import { update } from './update';
 import { verifyToken } from './verify-token';
@@ -16,4 +18,6 @@ export const clientService = {
   getExamFileViewerUrl,
   getExamPdfBlob,
   update,
+  masterData,
+  appointment,
 };

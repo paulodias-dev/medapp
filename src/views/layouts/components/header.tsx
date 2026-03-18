@@ -49,6 +49,15 @@ export function Header() {
                 </NavLink>
               </Button>
 
+              <Button
+                asChild
+                variant="secondary"
+                className="rounded-xl flex items-center justify-center gap-2">
+                <NavLink to="/certificates">
+                  <p className="leading-3">Atestados</p>
+                </NavLink>
+              </Button>
+
               <Button asChild variant="ghost" className="rounded-xl">
                 <NavLink to="/newsroom">
                   <Lightning size={20} />
@@ -115,12 +124,12 @@ export function Header() {
           <MenubarTrigger>Atestados</MenubarTrigger>
           <MenubarContent>
             <MenubarItem asChild>
-              <NavLink
-                className="active:scale-95 aria-[current=page]:bg-primary aria-[current=page]:text-white cursor-pointer transition-all"
-                to="/certificates">
-                Gerênciar
-              </NavLink>
-            </MenubarItem>
+                <NavLink
+                  className="active:scale-95 aria-[current=page]:bg-primary aria-[current=page]:text-white cursor-pointer transition-all"
+                  to="/certificates">
+                  Gerenciar
+                </NavLink>
+              </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
       </Menubar>

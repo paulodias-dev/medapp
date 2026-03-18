@@ -1,5 +1,6 @@
 import { dashboardService } from '@/app/services/dashboard';
 import { DataTable } from '@/views/components/data-table';
+import { Button } from '@/views/components/ui/button';
 import {
   Card,
   CardDescription,
@@ -21,6 +22,7 @@ import {
 } from '@tanstack/react-table';
 import { endOfDay } from 'date-fns';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { columns } from './columns';
 import { AsoCompliance, AsoFindDialog } from './components';
@@ -87,13 +89,18 @@ export function Dashboard() {
               </p>
             </div>
 
-            <Input
-              className="max-w-64"
-              placeholder="Pesquisar por atestado..."
-              onChange={(event) =>
-                table.getColumn('nome')?.setFilterValue(event.target.value)
-              }
-            />
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline">
+                <Link to="/certificates">Ver todos os atestados</Link>
+              </Button>
+              <Input
+                className="max-w-64"
+                placeholder="Pesquisar por atestado..."
+                onChange={(event) =>
+                  table.getColumn('nome')?.setFilterValue(event.target.value)
+                }
+              />
+            </div>
           </div>
         </div>
       </main>

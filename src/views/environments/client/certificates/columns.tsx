@@ -1,3 +1,4 @@
+import { ClinicalResultListItem } from '@/app/models';
 import { Button } from '@/views/components/ui/button';
 import { Badge } from '@/views/components/ui/badge';
 import { CaretSortIcon } from '@radix-ui/react-icons';
@@ -5,7 +6,19 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import { Manage } from './manage';
 
-export const columns: ColumnDef<any>[] = [
+function getStatusMeta(status: number) {
+  if (status === 1) {
+    return { label: 'Aprovado', variant: 'secondary' as const };
+  }
+
+  if (status === 0) {
+    return { label: 'Pendente', variant: 'outline' as const };
+  }
+
+  return { label: 'Reprovado', variant: 'default' as const };
+}
+
+export const columns: ColumnDef<ClinicalResultListItem>[] = [
   {
     accessorKey: 'aso_number',
     header: ({ column }) => {
@@ -24,7 +37,8 @@ export const columns: ColumnDef<any>[] = [
     },
   },
   {
-    accessorKey: 'patient_name',
+    accessorFn: (row) => row.patient?.name ?? '-',
+    id: 'patient_name',
     header: ({ column }) => {
       return (
         <Button
@@ -41,7 +55,8 @@ export const columns: ColumnDef<any>[] = [
     },
   },
   {
-    accessorKey: 'phone1',
+    accessorFn: (row) => row.patient?.phone1 ?? '-',
+    id: 'phone1',
     header: ({ column }) => {
       return (
         <Button
@@ -58,7 +73,8 @@ export const columns: ColumnDef<any>[] = [
     },
   },
   {
-    accessorKey: 'patient_email',
+    accessorFn: (row) => row.patient?.email ?? '-',
+    id: 'patient_email',
     header: ({ column }) => {
       return (
         <Button
@@ -75,6 +91,24 @@ export const columns: ColumnDef<any>[] = [
     },
   },
   {
+    accessorFn: (row) => row.clinical_type_result?.name ?? '-',
+    id: 'type_result_name',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="center"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Tipo
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      return <div className="px-3">{row.original.clinical_type_result?.name ?? '-'}</div>;
+    },
+  },
+  {
     accessorKey: 'status',
     header: ({ column }) => {
       return (
@@ -88,33 +122,24 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      const status = row.getValue('status');
+      const status = Number(row.getValue('status'));
+      const statusMeta = getStatusMeta(status);
       return (
-        <Badge
-          className="text-xs"
-          variant={status === 1 ? 'secondary' : status === 0 ? 'outline' : 'default'}>
-          {status === 1 ? 'Aprovado' : status === 0 ? 'Pendente' : 'Reprovado'}
+        <Badge className="text-xs" variant={statusMeta.variant}>
+          {statusMeta.label}
         </Badge>
       );
     },
   },
   {
-    accessorKey: 'actions',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          className="center text-center"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-          Ações
-          <CaretSortIcon className="ml-2 h-4 w-4" />
-        </Button>
-      );
+    id: 'actions',
+    header: () => {
+      return <div className="text-center">Detalhes</div>;
     },
-    cell: () => {
+    cell: ({ row }) => {
       return (
         <div className="flex items-center justify-center gap-4">
-          <Manage />
+          <Manage exam={row.original} />
         </div>
       );
     },

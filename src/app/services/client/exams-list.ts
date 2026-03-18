@@ -1,11 +1,11 @@
 import { api } from '..';
+import { ClinicalResultListItem } from '@/app/models';
 
-type SumaryResponse = Array<any>;
 type ExamsListResponse = {
-  exams: SumaryResponse;
+  exams: ClinicalResultListItem[];
 };
 
-export async function getAllExams(): Promise<SumaryResponse> {
+export async function getAllExams(): Promise<ClinicalResultListItem[]> {
   const { signal } = new AbortController();
 
   const { data } = await api.get<ExamsListResponse>(`/client/exams-list`, {

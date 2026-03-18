@@ -1,4 +1,5 @@
 import { auth } from './auth';
+import { getExamById, getExamFileViewerUrl, getExamPdfBlob } from './exam-details';
 import { getAllExams } from './exams-list';
 import { forgotPassword } from './forgot-password';
 import { resetPassword } from './reset-password';
@@ -11,5 +12,8 @@ export const clientService = {
   resetPassword,
   verifyToken,
   getAllExams,
+  getExamById,
+  getExamFileViewerUrl,
+  getExamPdfBlob,
   update,
 };

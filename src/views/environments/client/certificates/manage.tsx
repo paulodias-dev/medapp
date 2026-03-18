@@ -1,348 +1,308 @@
+import {
+  ClinicalResultExamFile,
+  ClinicalResultListItem,
+} from '@/app/models';
+import { clientService } from '@/app/services/client';
+import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
 import { ScrollArea } from '@/views/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetTrigger } from '@/views/components/ui/sheet';
-
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/views/components/ui/avatar';
-
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/views/components/ui/sheet';
+import { Separator } from '@/views/components/ui/separator';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/views/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
+import { Eye, File, FilePdf, SpinnerGap } from '@phosphor-icons/react';
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
-import { Badge } from '@/views/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/views/components/ui/select';
-import { Separator } from '@/views/components/ui/separator';
-import { Clock, File } from '@phosphor-icons/react';
-import { Eye } from 'lucide-react';
+type ManageProps = {
+  exam: ClinicalResultListItem;
+};
 
-export function Manage() {
+type FileWithContext = ClinicalResultExamFile & {
+  examName: string;
+};
+
+export function Manage({ exam }: ManageProps) {
+  const [open, setOpen] = useState(false);
+  const [openingFileId, setOpeningFileId] = useState<number | null>(null);
+  const [openingPdf, setOpeningPdf] = useState(false);
+
+  const detailQuery = useQuery({
+    queryKey: ['exam-details', exam.id],
+    queryFn: () => clientService.getExamById(exam.id),
+    enabled: open,
+    retry: false,
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const details = detailQuery.data?.data;
+  const status = Number(details?.status ?? exam.status);
+  const statusMeta = getStatusMeta(status);
+
+  const patientName = details?.patient?.name ?? exam.patient?.name ?? '-';
+  const patientPhone = details?.patient?.phone1 ?? exam.patient?.phone1 ?? '-';
+  const patientEmail = details?.patient?.email ?? exam.patient?.email ?? '-';
+  const examType =
+    details?.clinicalTypeResult?.name ?? exam.clinical_type_result?.name ?? '-';
+
+  const files = useMemo<FileWithContext[]>(() => {
+    if (!details?.clinicalResultExams?.length) return [];
+
+    return details.clinicalResultExams.flatMap((clinicalExam) => {
+      const examName = clinicalExam.exams?.[0]?.name ?? `Exame #${clinicalExam.exam_id}`;
+
+      return (clinicalExam.files ?? []).map((file) => ({
+        ...file,
+        examName,
+      }));
+    });
+  }, [details]);
+
+  async function handleOpenFile(file: FileWithContext) {
+    try {
+      setOpeningFileId(file.id);
+      const fileUrl = await clientService.getExamFileViewerUrl(file.id);
+
+      if (!fileUrl) {
+        toast.error('Não foi possível localizar o arquivo.');
+        return;
+      }
+
+      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      toast.error('Falha ao abrir o arquivo.');
+    } finally {
+      setOpeningFileId(null);
+    }
+  }
+
+  async function handleOpenPdf() {
+    try {
+      setOpeningPdf(true);
+      const blob = await clientService.getExamPdfBlob(exam.id);
+      const pdfUrl = URL.createObjectURL(blob);
+      window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+
+      setTimeout(() => {
+        URL.revokeObjectURL(pdfUrl);
+      }, 60_000);
+    } catch {
+      toast.error('Não foi possível gerar o PDF do ASO.');
+    } finally {
+      setOpeningPdf(false);
+    }
+  }
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
-          Open
+          Detalhes
         </Button>
       </SheetTrigger>
-      <SheetContent className="!w-[600px] !max-w-[600px] z-[999999999] rounded-2xl flex flex-col gap-6 overflow-y-auto">
-        <header className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-gray-400">
-              Atestado de Saúde Ocupacional
-            </p>
-            <h1 className="font-medium">#22637182</h1>
+
+      <SheetContent className="!w-[640px] !max-w-[640px] z-[999999999] rounded-2xl flex flex-col gap-4 overflow-y-auto">
+        <SheetHeader className="space-y-1">
+          <SheetTitle className="flex items-center gap-2">
+            <span>ASO #{exam.aso_number ?? exam.id}</span>
+            <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
+          </SheetTitle>
+          <SheetDescription>
+            Gerenciamento do atestado de saúde ocupacional.
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="rounded-2xl border p-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <InfoItem label="Paciente" value={patientName} />
+            <InfoItem label="Tipo de Exame" value={examType} />
+            <InfoItem label="Telefone" value={patientPhone} />
+            <InfoItem label="E-mail" value={patientEmail} />
+            <InfoItem label="Data do ASO" value={formatDateLabel(details?.aso_date ?? exam.aso_date)} />
+            <InfoItem label="Criado em" value={formatDateLabel(details?.created_at ?? exam.created_at)} />
           </div>
 
-          <Separator orientation="vertical" />
-
-          <Badge>Periodico</Badge>
-        </header>
-
-        <div className="border rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Avatar>
-              <AvatarImage src="https://github.com/GuilhermeSantosUI.png" alt="@shadcn" />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
-
+          <div className="flex items-center justify-between rounded-xl bg-blue-50 p-3 text-sm text-blue-700">
             <div>
-              <p className="text-xs text-gray-400">Nome do paciente:</p>
-              <h1>Guilherme Santos</h1>
+              <p className="font-medium">Resumo dos anexos</p>
+              <p>
+                Com arquivo: {details?.withFilesCount ?? 0} | Sem arquivo:{' '}
+                {details?.withoutFilesCount ?? 0}
+              </p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <p className="text-xs text-gray-400">Status:</p>
-
-            <Select>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue
-                  placeholder="Selecione o status"
-                  defaultValue="teste"
-                />
-              </SelectTrigger>
-              <SelectContent className="z-[9999999999]">
-                <SelectGroup>
-                  <SelectItem
-                    value="teste"
-                    className="relative"
-                    color="bg-green-600">
-                    Sem alteração
-                  </SelectItem>
-                  <SelectItem
-                    value="apple"
-                    className="relative"
-                    color="bg-gray-600">
-                    Em andamento
-                  </SelectItem>
-                  <SelectItem
-                    value="banana"
-                    className="relative"
-                    color="bg-red-600">
-                    Alterado
-                  </SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <Button
+              type="button"
+              variant="secondary"
+              className="gap-2"
+              onClick={handleOpenPdf}
+              disabled={openingPdf}>
+              {openingPdf ? (
+                <SpinnerGap className="h-4 w-4 animate-spin" />
+              ) : (
+                <FilePdf className="h-4 w-4" />
+              )}
+              Abrir PDF
+            </Button>
           </div>
         </div>
 
-        <div className="flex gap-2 rounded-2xl bg-blue-50 p-4">
-          <Clock className="w-6 h-6 fill-blue-600" />
-          <p className="text-blue-400 text-sm">
-            Horário disponível no futuro, você pode estender o tempo de reserva.
-          </p>
-        </div>
-
-        <Tabs defaultValue="account">
+        <Tabs defaultValue="general" className="w-full">
           <TabsList>
-            <TabsTrigger value="account">Informações Gerais</TabsTrigger>
-            <TabsTrigger value="password">Arquivos</TabsTrigger>
+            <TabsTrigger value="general">Informações</TabsTrigger>
+            <TabsTrigger value="files">Arquivos</TabsTrigger>
           </TabsList>
 
           <Separator className="my-4" />
 
-          <TabsContent value="account">
-            <h1>Informações Gerais</h1>
-
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">
-                    Nome completo:
-                  </p>
-                  <h1>Teste teste teste teste</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">Sexo:</p>
-                  <h1>Masculino</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">
-                    Data de nascimento:
-                  </p>
-                  <h1>31/12/1969</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">CPF:</p>
-                  <h1>000.000.000-00</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">RG:</p>
-                  <h1>00.000.000-0</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">
-                    Estado Civil:
-                  </p>
-                  <h1>Solteiro</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">Número:</p>
-                  <h1>123</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">Bairro:</p>
-                  <h1>Teste Bairro</h1>
-                </div>
+          <TabsContent value="general" className="space-y-3">
+            {detailQuery.isLoading && (
+              <div className="rounded-xl border p-4 text-sm text-slate-500">
+                Carregando detalhes do ASO...
               </div>
+            )}
 
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">Telefone:</p>
-                  <h1>(00) 00000-0000</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">E-Mail:</p>
-                  <h1>teste@teste.com</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">Telefone:</p>
-                  <h1>(00) 00000-0000</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">Logradouro:</p>
-                  <h1>Rua Teste</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">
-                    Complemento:
-                  </p>
-                  <h1>Apto 00</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">Cidade:</p>
-                  <h1>Teste City</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">Estado:</p>
-                  <h1>Teste State</h1>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs text-gray-400 uppercase">CEP:</p>
-                  <h1>00000-000</h1>
-                </div>
+            {detailQuery.isError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                Não foi possível carregar os detalhes deste ASO.
               </div>
-            </div>
+            )}
+
+            {!detailQuery.isLoading && !detailQuery.isError && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <InfoItem label="ID do Registro" value={String(exam.id)} />
+                <InfoItem label="Número do ASO" value={String(exam.aso_number ?? exam.id)} />
+                <InfoItem label="Status" value={statusMeta.label} />
+                <InfoItem label="Visibilidade" value={exam.public ? 'Público' : 'Privado'} />
+                <InfoItem
+                  label="Atualizado em"
+                  value={formatDateLabel(details?.updated_at ?? exam.updated_at)}
+                />
+                <InfoItem
+                  label="Exames vinculados"
+                  value={String(details?.clinicalResultExams?.length ?? 0)}
+                />
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="password">
-            <ScrollArea className="h-max space-y-4">
-              <div className="rounded-2xl border px-2 py-3 flex items-center gap-4 relative">
-                <div className="border rounded-xl relative p-2">
-                  <File className="w-6 h-6" />
-                  <div className="absolute left-2 bottom-2 w-3 h-3 rounded-full bg-green-600"></div>
-                </div>
-
-                <div>
-                  <p className="text-sm">
-                    nome_do_arquivo_atestado_22637182.pdf
-                  </p>
-                  <p className="text-xs">1.2 MB</p>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute inset-y-0 my-auto right-4">
-                  <Eye className="w-5 h-5" />
-                </Button>
+          <TabsContent value="files">
+            {detailQuery.isLoading && (
+              <div className="rounded-xl border p-4 text-sm text-slate-500">
+                Carregando arquivos...
               </div>
+            )}
 
-              <div className="rounded-2xl border px-2 py-3 flex items-center gap-4 relative mt-4">
-                <div className="border rounded-xl relative p-2">
-                  <File className="w-6 h-6" />
-                  <div className="absolute left-2 bottom-2 w-3 h-3 rounded-full bg-green-600"></div>
-                </div>
-
-                <div>
-                  <p className="text-sm">
-                    nome_do_arquivo_atestado_22637182.pdf
-                  </p>
-                  <p className="text-xs">1.2 MB</p>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute inset-y-0 my-auto right-4">
-                  <Eye className="w-5 h-5" />
-                </Button>
+            {detailQuery.isError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                Não foi possível carregar os arquivos deste ASO.
               </div>
+            )}
 
-              <div className="rounded-2xl border px-2 py-3 flex items-center gap-4 relative mt-4">
-                <div className="border rounded-xl relative p-2">
-                  <File className="w-6 h-6" />
-                  <div className="absolute left-2 bottom-2 w-3 h-3 rounded-full bg-yellow-600"></div>
-                </div>
+            {!detailQuery.isLoading && !detailQuery.isError && (
+              <ScrollArea className="h-[380px] pr-2">
+                {files.length === 0 ? (
+                  <div className="rounded-xl border p-4 text-sm text-slate-500">
+                    Este ASO ainda não possui arquivos anexados.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {files.map((file) => (
+                      <div
+                        key={file.id}
+                        className="rounded-2xl border px-3 py-3 flex items-center gap-3 relative">
+                        <div className="border rounded-xl relative p-2">
+                          <File className="w-5 h-5" />
+                        </div>
 
-                <div>
-                  <p className="text-sm">
-                    nome_do_arquivo_atestado_22637182.pdf
-                  </p>
-                  <p className="text-xs">1.2 MB</p>
-                </div>
+                        <div className="min-w-0 pr-14">
+                          <p className="text-sm truncate">{file.name ?? `Arquivo #${file.id}`}</p>
+                          <p className="text-xs text-slate-500">
+                            {file.examName} | {formatFileSize(file.size)}
+                          </p>
+                        </div>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute inset-y-0 my-auto right-4">
-                  <Eye className="w-5 h-5" />
-                </Button>
-              </div>
-
-              <div className="rounded-2xl border px-2 py-3 flex items-center gap-4 relative mt-4">
-                <div className="border rounded-xl relative p-2">
-                  <File className="w-6 h-6" />
-                  <div className="absolute left-2 bottom-2 w-3 h-3 rounded-full bg-green-600"></div>
-                </div>
-
-                <div>
-                  <p className="text-sm">
-                    nome_do_arquivo_atestado_22637182.pdf
-                  </p>
-                  <p className="text-xs">1.2 MB</p>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute inset-y-0 my-auto right-4">
-                  <Eye className="w-5 h-5" />
-                </Button>
-              </div>
-
-              <div className="rounded-2xl border px-2 py-3 flex items-center gap-4 relative mt-4">
-                <div className="border rounded-xl relative p-2">
-                  <File className="w-6 h-6" />
-                  <div className="absolute left-2 bottom-2 w-3 h-3 rounded-full bg-red-600"></div>
-                </div>
-
-                <div>
-                  <p className="text-sm">
-                    nome_do_arquivo_atestado_22637182.pdf
-                  </p>
-                  <p className="text-xs">1.2 MB</p>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute inset-y-0 my-auto right-4">
-                  <Eye className="w-5 h-5" />
-                </Button>
-              </div>
-
-              <div className="rounded-2xl border px-2 py-3 flex items-center gap-4 relative mt-4">
-                <div className="border rounded-xl relative p-2">
-                  <File className="w-6 h-6" />
-                  <div className="absolute left-2 bottom-2 w-3 h-3 rounded-full bg-red-600"></div>
-                </div>
-
-                <div>
-                  <p className="text-sm">
-                    nome_do_arquivo_atestado_22637182.pdf
-                  </p>
-                  <p className="text-xs">1.2 MB</p>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute inset-y-0 my-auto right-4">
-                  <Eye className="w-5 h-5" />
-                </Button>
-              </div>
-            </ScrollArea>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute inset-y-0 my-auto right-3"
+                          onClick={() => handleOpenFile(file)}
+                          disabled={openingFileId === file.id}>
+                          {openingFileId === file.id ? (
+                            <SpinnerGap className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            )}
           </TabsContent>
         </Tabs>
       </SheetContent>
     </Sheet>
   );
+}
+
+function InfoItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border p-3">
+      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-sm mt-1 break-words">{value || '-'}</p>
+    </div>
+  );
+}
+
+function getStatusMeta(status: number) {
+  if (status === 1) {
+    return { label: 'Aprovado', variant: 'secondary' as const };
+  }
+
+  if (status === 0) {
+    return { label: 'Pendente', variant: 'outline' as const };
+  }
+
+  return { label: 'Reprovado', variant: 'default' as const };
+}
+
+function formatDateLabel(value?: string | null): string {
+  if (!value) return '-';
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '-';
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(parsed);
+}
+
+function formatFileSize(bytes?: number | null): string {
+  if (!bytes || bytes <= 0) return 'Tamanho não informado';
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = bytes;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }

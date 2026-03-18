@@ -17,9 +17,14 @@ import { useState } from 'react';
 import { columns } from './columns';
 
 export function Certificates() {
-  const { data: getAllExams } = useQuery({
+  const {
+    data: getAllExams,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['getAllExams'],
     queryFn: clientService.getAllExams,
+    retry: false,
   });
 
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -50,7 +55,17 @@ export function Certificates() {
 
       <hr className="border-b-[10px] border-[#f5f5f5]" />
 
-      <DataTable columns={columns} table={table} />
+      {isLoading && (
+        <div className="px-4 py-8 text-sm text-slate-500">Carregando atestados...</div>
+      )}
+
+      {isError && (
+        <div className="px-4 py-8 text-sm text-red-600">
+          Não foi possível carregar a listagem de atestados.
+        </div>
+      )}
+
+      {!isLoading && !isError && <DataTable columns={columns} table={table} />}
     </div>
   );
 }

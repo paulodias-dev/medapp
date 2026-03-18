@@ -90,7 +90,9 @@ export function Personal() {
   const isPessoaJuridica = personType === 'J';
   const avatarValue = form.watch('img');
   const profileName = form.watch('name');
-  const avatarPreview = localAvatarPreview || resolveClientAvatarUrl(avatarValue, data?.id);
+  const avatarPreview =
+    localAvatarPreview ||
+    resolveClientAvatarUrl(avatarValue, data?.id, data?.updated_at);
   const accountStatus = resolveAccountStatus(data?.status);
   const createdAtLabel = formatDateTime(data?.created_at);
   const updatedAtLabel = formatDateTime(data?.updated_at);
@@ -117,22 +119,20 @@ export function Personal() {
           id: data.id,
           img_file: selectedAvatarFile,
         });
-        await clientService.update(formDataPayload);
-        return;
+        return clientService.update(formDataPayload);
       }
 
-      await clientService.update({ ...payload, id: data.id });
+      return clientService.update({ ...payload, id: data.id });
     },
-    onSuccess: async () => {
+    onSuccess: async (response) => {
       setSelectedAvatarFile(null);
-      toast.success('Dados atualizados com sucesso.');
-      queryClient.invalidateQueries({ queryKey: ['profileHeaderAvatar'] });
-      try {
-        const refreshedProfile = await clientService.verifyToken();
-        hydrateProfileForm(refreshedProfile, form, setData, setLocalAvatarPreview);
-      } catch {
-        // Keep local state as-is; header refetch still updates avatar globally.
+      if (response?.data) {
+        hydrateProfileForm(response.data, form, setData, setLocalAvatarPreview);
+        queryClient.setQueryData(['profileHeaderAvatar'], response.data);
       }
+
+      await queryClient.invalidateQueries({ queryKey: ['profileHeaderAvatar'] });
+      toast.success('Dados atualizados com sucesso.');
     },
     onError: (error) => {
       const parsedError = parseApiError(error);

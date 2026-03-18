@@ -1,11 +1,16 @@
 import { api } from '..';
+import { VerifyTokenResponse } from '@/app/models';
 
 type UpdatePayload = Record<string, any> | FormData;
+type UpdateResponse = {
+  message: string;
+  data: VerifyTokenResponse;
+};
 
-export async function update(params: UpdatePayload): Promise<any> {
+export async function update(params: UpdatePayload): Promise<UpdateResponse> {
   const { signal } = new AbortController();
   let id: string | number | null = null;
-  const payload = new FormData();
+  let payload: FormData;
 
   if (params instanceof FormData) {
     id = params.get('id') as string | null;
@@ -13,12 +18,9 @@ export async function update(params: UpdatePayload): Promise<any> {
     if (zipCode && !params.get('cep')) {
       params.set('cep', String(zipCode));
     }
-
-    params.forEach((value, key) => {
-      if (key === '_method') return;
-      payload.append(key, value);
-    });
+    payload = params;
   } else {
+    payload = new FormData();
     const { id: rawId, zipCode, ...rest } = params;
     id = rawId;
 
@@ -42,7 +44,7 @@ export async function update(params: UpdatePayload): Promise<any> {
   payload.set('id', String(id));
   payload.set('_method', 'PUT');
 
-  const { data } = await api.post<any>(`/client/client/${id}`, payload, {
+  const { data } = await api.post<UpdateResponse>(`/client/client/${id}`, payload, {
     signal,
   });
 

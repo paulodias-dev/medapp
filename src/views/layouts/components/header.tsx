@@ -28,7 +28,9 @@ export function Header() {
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
-  const avatarSrc = resolveClientAvatarUrl(profile?.img, profile?.id) || DEFAULT_AVATAR_URL;
+  const avatarSrc =
+    resolveClientAvatarUrl(profile?.img, profile?.id, profile?.updated_at) ||
+    DEFAULT_AVATAR_URL;
 
   return (
     <div className="sticky top-0 backdrop-blur-md bg-white/30 z-[99999999]">

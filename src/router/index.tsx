@@ -47,7 +47,11 @@ type AuthGuardProps = {
 };
 
 export function AuthGuard({ isPrivate }: AuthGuardProps) {
-  const { isAuth } = useAuth();
+  const { isAuth, isAuthReady } = useAuth();
+
+  if (!isAuthReady) {
+    return null;
+  }
 
   if (!isAuth && isPrivate) {
     return <Navigate to="/auth" />;

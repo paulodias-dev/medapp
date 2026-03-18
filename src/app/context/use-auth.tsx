@@ -22,6 +22,7 @@ type AuthContextType = {
   signOut: () => void;
   isTokenExpired: boolean;
   isAuth: boolean;
+  isAuthReady: boolean;
 };
 
 type User = {
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setToken] = useState<string | null>(null);
   const [isTokenExpired, setIsTokenExpired] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   const signIn = useCallback(async (params: AuthProps) => {
     const props = await clientService.auth(params);
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(userData);
     setToken(props.api_token);
     setIsAuth(true);
+    setIsAuthReady(true);
 
     localStorage.setItem(localStorageKeys.USER_DATA, JSON.stringify(userData));
     localStorage.setItem(localStorageKeys.ACCESS_TOKEN, props.api_token);
@@ -81,12 +84,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     if (!token || checkTokenExpiration(token)) {
       signOut();
+      setIsAuthReady(true);
       return;
     }
 
     setToken(token);
     setIsAuth(true);
     api.defaults.headers.Authorization = `Bearer ${token}`;
+    setIsAuthReady(true);
   }, [signOut]);
 
   return (
@@ -98,6 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         signOut,
         isTokenExpired,
         isAuth,
+        isAuthReady,
       }}>
       {children}
     </AuthContext.Provider>

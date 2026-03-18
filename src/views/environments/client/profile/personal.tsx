@@ -2,6 +2,7 @@ import { VerifyTokenResponse } from '@/app/models';
 import { clientService } from '@/app/services/client';
 import { cepMask, cpfCnpjMask, maskICMS, maskRGIE, phoneMask } from '@/app/utils';
 import { ProfileAvatarPicker } from '@/views/components/profile-avatar-picker';
+import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
 import { InputFormItem } from '@/views/components/ui/input-form-item';
@@ -80,6 +81,9 @@ export function Personal() {
   const avatarValue = form.watch('img');
   const profileName = form.watch('name');
   const avatarPreview = localAvatarPreview || resolveAvatarUrl(avatarValue);
+  const accountStatus = resolveAccountStatus(data?.status);
+  const createdAtLabel = formatDateTime(data?.created_at);
+  const updatedAtLabel = formatDateTime(data?.updated_at);
 
   type FormData = z.infer<typeof schema>;
 
@@ -210,6 +214,29 @@ export function Personal() {
                 onRemoveImage={handleRemoveAvatar}
                 disabled={submit.isPending}
               />
+
+              <section className="mt-4 rounded-xl border bg-slate-50 p-4">
+                <h5 className="text-sm font-semibold text-slate-900">Dados da conta</h5>
+
+                <div className="mt-3 space-y-3 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500">Status</span>
+                    <Badge variant="outline" className={accountStatus.className}>
+                      {accountStatus.label}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500">Criado em</span>
+                    <span className="text-right text-slate-700">{createdAtLabel}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500">Atualizado em</span>
+                    <span className="text-right text-slate-700">{updatedAtLabel}</span>
+                  </div>
+                </div>
+              </section>
             </aside>
 
             <div className="space-y-6">
@@ -563,4 +590,42 @@ function resolveAvatarUrl(img?: string | null): string | undefined {
   if (img.startsWith('blob:') || img.startsWith('data:')) return img;
 
   return `${API_ORIGIN}/${img.replace(/^\/+/, '')}`;
+}
+
+type AccountStatusMeta = {
+  label: string;
+  className: string;
+};
+
+function resolveAccountStatus(status?: number): AccountStatusMeta {
+  if (status === 1) {
+    return {
+      label: 'Ativo',
+      className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    };
+  }
+
+  if (status === 0) {
+    return {
+      label: 'Inativo',
+      className: 'border-slate-200 bg-slate-100 text-slate-600',
+    };
+  }
+
+  return {
+    label: 'Pendente',
+    className: 'border-amber-200 bg-amber-50 text-amber-700',
+  };
+}
+
+function formatDateTime(value?: string | null): string {
+  if (!value) return 'Não informado';
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) return 'Não informado';
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(parsedDate);
 }

@@ -34,10 +34,14 @@ export function ProfileAvatarPicker({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="relative w-fit">
-        <Avatar className="h-40 w-40 rounded-md border border-slate-200">
-          <AvatarImage src={src} alt={alt ?? 'Avatar do perfil'} />
+    <div className="flex w-full flex-col gap-2">
+      <div className="relative aspect-square w-full">
+        <Avatar className="h-full w-full rounded-md border border-slate-200">
+          <AvatarImage
+            src={src}
+            alt={alt ?? 'Avatar do perfil'}
+            className="h-full w-full object-cover"
+          />
           <AvatarFallback className="rounded-md bg-slate-100 text-slate-400">
             <User size={56} />
           </AvatarFallback>
@@ -75,7 +79,7 @@ export function ProfileAvatarPicker({
         />
       </div>
 
-      <p className="text-sm text-[#9da1c2]">Allowed file types: png, jpg, jpeg.</p>
+      <p className="text-sm text-[#9da1c2]">Imagem do perfil</p>
     </div>
   );
 }

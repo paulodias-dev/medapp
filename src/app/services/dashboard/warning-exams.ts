@@ -1,10 +1,10 @@
 import { api } from '..';
 
 type WarningResponse = {
-  warning_exams: Array<ExamsResponse>;
+  warning_exams: Array<WarningExamResponse>;
 };
 
-type ExamsResponse = {
+export type WarningExamResponse = {
   id: number;
   user_id: number;
   branch_id: number;
@@ -39,7 +39,7 @@ type ExamsResponse = {
   };
 };
 
-export async function warningExams(): Promise<Array<ExamsResponse>> {
+export async function warningExams(): Promise<Array<WarningExamResponse>> {
   const { signal } = new AbortController();
 
   const { data } = await api.get<WarningResponse>(`/client/warning-exams`, {

@@ -1,6 +1,9 @@
 import { api } from '..';
 
-type SumaryResponse = Array<any>;
+export type SumaryResponse = {
+  total_exams: number | null;
+  active_exams: number | null;
+};
 
 export async function sumaryExams(): Promise<SumaryResponse> {
   const { signal } = new AbortController();

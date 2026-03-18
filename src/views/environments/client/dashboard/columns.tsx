@@ -1,3 +1,4 @@
+import { WarningExamResponse } from '@/app/services/dashboard/warning-exams';
 import { phoneMask } from '@/app/utils';
 import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
@@ -7,7 +8,19 @@ import { ColumnDef } from '@tanstack/react-table';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export const columns: ColumnDef<any>[] = [
+function getStatusMeta(status: number) {
+  if (status === 1) {
+    return { label: 'Aprovado', variant: 'secondary' as const };
+  }
+
+  if (status === 0) {
+    return { label: 'Pendente', variant: 'outline' as const };
+  }
+
+  return { label: 'Reprovado', variant: 'default' as const };
+}
+
+export const columns: ColumnDef<WarningExamResponse>[] = [
   {
     accessorKey: 'id',
     header: ({ column }) => {
@@ -43,14 +56,14 @@ export const columns: ColumnDef<any>[] = [
             size="icon"
             variant="outline"
             className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={() => handleCopyToClipBoard(row.getValue('id'))}>
-            {copiedId === row.getValue('id') ? (
+            onClick={() => handleCopyToClipBoard(String(row.getValue('id')))}>
+            {copiedId === String(row.getValue('id')) ? (
               <Check className="h-3 w-3 text-green-500" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
             <span className="sr-only">
-              {copiedId === row.getValue('id') ? 'Copiado!' : 'Copiar ID'}
+              {copiedId === String(row.getValue('id')) ? 'Copiado!' : 'Copiar ID'}
             </span>
           </Button>
         </div>
@@ -58,7 +71,8 @@ export const columns: ColumnDef<any>[] = [
     },
   },
   {
-    accessorKey: 'nome',
+    accessorFn: (row) => row.patient?.name ?? '-',
+    id: 'nome',
     header: ({ column }) => {
       return (
         <Button
@@ -71,11 +85,12 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.patient.name}</div>;
+      return <div className="px-3">{row.original.patient?.name ?? '-'}</div>;
     },
   },
   {
-    accessorKey: 'telefone',
+    accessorFn: (row) => row.patient?.phone1 ?? '-',
+    id: 'telefone',
     header: ({ column }) => {
       return (
         <Button
@@ -88,13 +103,13 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      return (
-        <div className="px-3">{phoneMask(row.original.patient.phone1)}</div>
-      );
+      const phone = row.original.patient?.phone1 ?? '';
+      return <div className="px-3">{phone ? phoneMask(phone) : '-'}</div>;
     },
   },
   {
-    accessorKey: 'email',
+    accessorFn: (row) => row.patient?.email ?? '-',
+    id: 'email',
     header: ({ column }) => {
       return (
         <Button
@@ -107,7 +122,7 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.patient.email}</div>;
+      return <div className="px-3">{row.original.patient?.email ?? '-'}</div>;
     },
   },
   {
@@ -124,18 +139,11 @@ export const columns: ColumnDef<any>[] = [
       );
     },
     cell: ({ row }) => {
-      const status = row.getValue('status');
+      const status = Number(row.getValue('status'));
+      const statusMeta = getStatusMeta(status);
       return (
-        <Badge
-          className="text-xs"
-          variant={
-            status === 'Aprovado'
-              ? 'secondary'
-              : status === 'Pendente'
-              ? 'outline'
-              : 'default'
-          }>
-          {status === 1 ? 'Aprovado' : status === 0 ? 'Pendente' : 'Reprovado'}
+        <Badge className="text-xs" variant={statusMeta.variant}>
+          {statusMeta.label}
         </Badge>
       );
     },

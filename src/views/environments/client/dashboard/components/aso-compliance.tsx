@@ -6,51 +6,58 @@ import {
   CardTitle,
 } from '@/views/components/ui/card';
 
-const cards = [
-  {
-    title: 'Agendamentos',
-    amount: 3,
-    description: 'Solicitações em andamento',
-    progress: 25,
-    progressLabel: '+25% from last week',
-    textColor: '#000',
-    bgColor: 'bg-[#c7d7f0]',
-    key: 'agendamento',
-  },
-  {
-    title: 'Processados',
-    amount: 5,
-    description: "ASO's que não foram finalizados",
-    textColor: '#dadada',
-    bgColor: 'bg-[#5d90d3]',
-    progress: 50,
-    progressLabel: '+50% from last month',
-    key: 'processados',
-  },
-  {
-    title: 'Arquivados',
-    amount: 2,
-    description: "ASO's analizados e finalizados",
-    textColor: '#dadada',
-    bgColor: 'bg-[#2858a1]',
-    progress: 75,
-    progressLabel: '+75% from last quarter',
-    key: 'arquivados',
-  },
-  {
-    title: 'Totalidade',
-    amount: 10,
-    description: "Contagem completa dos ASO's",
-    textColor: '#dadada',
+type AsoComplianceProps = {
+  totalAsos: number;
+  activeAsos: number;
+  warningAsos: number;
+  impactedPatients: number;
+  isLoading?: boolean;
+  hasError?: boolean;
+};
 
-    bgColor: 'bg-[#1f3d6d]',
-    progress: 90,
-    progressLabel: '+90% from last year',
-    key: 'total',
-  },
-];
+export function AsoCompliance({
+  totalAsos,
+  activeAsos,
+  warningAsos,
+  impactedPatients,
+  isLoading,
+  hasError,
+}: AsoComplianceProps) {
+  const cards = [
+    {
+      title: 'Total de ASOs',
+      amount: totalAsos,
+      description: 'Registros no período consultado',
+      textColor: '#0f172a',
+      bgColor: 'bg-[#dbeafe]',
+      key: 'total',
+    },
+    {
+      title: 'ASOs Aprovados',
+      amount: activeAsos,
+      description: 'Registros com status aprovado',
+      textColor: '#e2e8f0',
+      bgColor: 'bg-[#1d4ed8]',
+      key: 'public',
+    },
+    {
+      title: 'Com Alteração',
+      amount: warningAsos,
+      description: "ASO's com warning identificado",
+      textColor: '#e2e8f0',
+      bgColor: 'bg-[#1e3a8a]',
+      key: 'warning',
+    },
+    {
+      title: 'Pacientes Impactados',
+      amount: impactedPatients,
+      description: 'Pacientes distintos com alteração',
+      textColor: '#e2e8f0',
+      bgColor: 'bg-[#1e293b]',
+      key: 'patients',
+    },
+  ];
 
-export function AsoCompliance() {
   return (
     <>
       {cards.map((card) => (
@@ -60,7 +67,7 @@ export function AsoCompliance() {
           className={`flex flex-col justify-center ${card.bgColor}`}>
           <CardHeader className="pb-2">
             <CardTitle className="text-4xl" style={{ color: card.textColor }}>
-              {card.amount}
+              {isLoading ? '...' : card.amount}
             </CardTitle>
             <CardDescription style={{ color: card.textColor }}>
               {card.title}
@@ -70,7 +77,9 @@ export function AsoCompliance() {
             <div
               className="text-xs text-muted-foreground"
               style={{ color: card.textColor }}>
-              {card.description}
+              {hasError
+                ? 'Não foi possível carregar os indicadores.'
+                : card.description}
             </div>
           </CardContent>
         </Card>

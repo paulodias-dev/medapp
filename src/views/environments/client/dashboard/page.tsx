@@ -30,13 +30,35 @@ import { AsoCompliance, AsoFindDialog } from './components';
 export function Dashboard() {
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const { data: warningExams } = useQuery({
+  const {
+    data: warningExams,
+    isLoading: warningExamsLoading,
+    isError: warningExamsError,
+  } = useQuery({
     queryKey: ['warningExams'],
     queryFn: dashboardService.warningExams,
+    retry: false,
   });
 
+  const {
+    data: sumaryExams,
+    isLoading: summaryLoading,
+    isError: summaryError,
+  } = useQuery({
+    queryKey: ['sumaryExams'],
+    queryFn: dashboardService.sumaryExams,
+    retry: false,
+  });
+
+  const warningExamsData = warningExams || [];
+  const totalAsos = sumaryExams?.total_exams ?? 0;
+  const activeAsos = sumaryExams?.active_exams ?? 0;
+  const warningAsos = warningExamsData.length;
+  const impactedPatients = new Set(warningExamsData.map((exam) => exam.patient_id))
+    .size;
+
   const table = useReactTable({
-    data: warningExams || [],
+    data: warningExamsData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
@@ -78,7 +100,14 @@ export function Dashboard() {
               </CardFooter>
             </Card>
 
-            <AsoCompliance />
+            <AsoCompliance
+              totalAsos={totalAsos}
+              activeAsos={activeAsos}
+              warningAsos={warningAsos}
+              impactedPatients={impactedPatients}
+              isLoading={summaryLoading || warningExamsLoading}
+              hasError={summaryError || warningExamsError}
+            />
           </div>
 
           <div className="flex items-center justify-between">

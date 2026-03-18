@@ -12,7 +12,7 @@ import { AxiosError } from 'axios';
 import { SpinnerGap } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { UseFormReturn, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
@@ -41,13 +41,16 @@ const schema = z.object({
   ip_address: z.string().optional(),
 });
 
+type ProfileFormData = z.infer<typeof schema>;
+
 export function Personal() {
   const [data, setData] = useState<VerifyTokenResponse>();
   const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(
     null,
   );
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
 
-  const form = useForm<z.infer<typeof schema>>({
+  const form = useForm<ProfileFormData>({
     mode: 'onBlur',
     resolver: zodResolver(schema),
     defaultValues: {
@@ -80,15 +83,13 @@ export function Personal() {
   const isPessoaJuridica = personType === 'J';
   const avatarValue = form.watch('img');
   const profileName = form.watch('name');
-  const avatarPreview = localAvatarPreview || resolveAvatarUrl(avatarValue);
+  const avatarPreview = localAvatarPreview || resolveAvatarUrl(avatarValue, data?.id);
   const accountStatus = resolveAccountStatus(data?.status);
   const createdAtLabel = formatDateTime(data?.created_at);
   const updatedAtLabel = formatDateTime(data?.updated_at);
 
-  type FormData = z.infer<typeof schema>;
-
   const submit = useMutation({
-    mutationFn: async (params: FormData) => {
+    mutationFn: async (params: ProfileFormData) => {
       if (!data) {
         throw new Error('Dados do perfil não carregados.');
       }
@@ -103,17 +104,34 @@ export function Personal() {
         payload.municipal_registration = '';
       }
 
+      if (selectedAvatarFile) {
+        const formDataPayload = buildUpdateFormData({
+          ...payload,
+          id: data.id,
+          img_file: selectedAvatarFile,
+        });
+        await clientService.update(formDataPayload);
+        return;
+      }
+
       await clientService.update({ ...payload, id: data.id });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      setSelectedAvatarFile(null);
       toast.success('Dados atualizados com sucesso.');
       queryClient.invalidateQueries({ queryKey: ['profileHeaderAvatar'] });
+      try {
+        const refreshedProfile = await clientService.verifyToken();
+        hydrateProfileForm(refreshedProfile, form, setData, setLocalAvatarPreview);
+      } catch {
+        // Keep local state as-is; header refetch still updates avatar globally.
+      }
     },
     onError: (error) => {
       const parsedError = parseApiError(error);
 
       Object.entries(parsedError.fieldErrors).forEach(([field, message]) => {
-        form.setError(field as keyof FormData, {
+        form.setError(field as keyof ProfileFormData, {
           type: 'server',
           message,
         });
@@ -125,39 +143,20 @@ export function Personal() {
     },
   });
 
-  function onSubmit(values: FormData) {
+  function onSubmit(values: ProfileFormData) {
     form.clearErrors();
     submit.mutate(values);
   }
 
   useEffect(() => {
-    clientService.verifyToken().then((res) => {
-      setLocalAvatarPreview(null);
-      form.setValue('type', res.type ?? '');
-      form.setValue('name', res.name ?? '');
-      form.setValue('name_fantasy', res.name_fantasy ?? '');
-      form.setValue('cpf_cnpj', res.cpf_cnpj ?? '');
-      form.setValue('rg_ie', res.rg_ie ?? '');
-      form.setValue('legal_nature', res.legal_nature ?? '');
-      form.setValue('icms', res.icms ?? '');
-      form.setValue('iest', res.iest ?? '');
-      form.setValue('municipal_registration', res.municipal_registration ?? '');
-      form.setValue('phone1', res.phone1 ?? '');
-      form.setValue('phone2', res.phone2 ?? '');
-      form.setValue('email', res.email ?? '');
-      form.setValue('img', res.img ?? '');
-      form.setValue('url', res.url ?? '');
-      form.setValue('zipCode', res.zipCode ?? '');
-      form.setValue('public_place', res.public_place ?? '');
-      form.setValue('number', res.number ?? '');
-      form.setValue('complement', res.complement ?? '');
-      form.setValue('district', res.district ?? '');
-      form.setValue('city', res.city ?? '');
-      form.setValue('state', res.state ?? '');
-      form.setValue('ip_address', res.ip_address ?? '');
-
-      setData(res);
-    });
+    clientService
+      .verifyToken()
+      .then((res) => {
+        hydrateProfileForm(res, form, setData, setLocalAvatarPreview);
+      })
+      .catch(() => {
+        toast.error('Não foi possível carregar os dados do perfil.');
+      });
   }, []);
 
   useEffect(
@@ -177,12 +176,19 @@ export function Personal() {
       });
       return;
     }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Imagem muito grande.', {
+        description: 'Selecione uma imagem de até 2MB.',
+      });
+      return;
+    }
 
     const previewUrl = URL.createObjectURL(file);
     setLocalAvatarPreview((prev) => {
       if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
       return previewUrl;
     });
+    setSelectedAvatarFile(file);
   }
 
   function handleRemoveAvatar() {
@@ -190,6 +196,7 @@ export function Personal() {
       if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
       return null;
     });
+    setSelectedAvatarFile(null);
     form.setValue('img', '', { shouldDirty: true });
   }
 
@@ -579,17 +586,83 @@ function normalizeFieldErrorMessage(field: string, message: string): string {
     return 'Este CPF/CNPJ já está cadastrado para outro usuário.';
   }
 
+  if (field === 'img_file') {
+    return 'A imagem deve ser PNG, JPG ou JPEG com até 2MB.';
+  }
+
   return message;
+}
+
+function hydrateProfileForm(
+  profile: VerifyTokenResponse,
+  form: UseFormReturn<ProfileFormData>,
+  setData: (value: VerifyTokenResponse) => void,
+  setLocalAvatarPreview: (value: string | null) => void,
+) {
+  setLocalAvatarPreview(null);
+  form.setValue('type', profile.type ?? '');
+  form.setValue('name', profile.name ?? '');
+  form.setValue('name_fantasy', profile.name_fantasy ?? '');
+  form.setValue('cpf_cnpj', profile.cpf_cnpj ?? '');
+  form.setValue('rg_ie', profile.rg_ie ?? '');
+  form.setValue('legal_nature', profile.legal_nature ?? '');
+  form.setValue('icms', profile.icms ?? '');
+  form.setValue('iest', profile.iest ?? '');
+  form.setValue('municipal_registration', profile.municipal_registration ?? '');
+  form.setValue('phone1', profile.phone1 ?? '');
+  form.setValue('phone2', profile.phone2 ?? '');
+  form.setValue('email', profile.email ?? '');
+  form.setValue('img', profile.img ?? '');
+  form.setValue('url', profile.url ?? '');
+  form.setValue('zipCode', profile.zipCode ?? '');
+  form.setValue('public_place', profile.public_place ?? '');
+  form.setValue('number', profile.number ?? '');
+  form.setValue('complement', profile.complement ?? '');
+  form.setValue('district', profile.district ?? '');
+  form.setValue('city', profile.city ?? '');
+  form.setValue('state', profile.state ?? '');
+  form.setValue('ip_address', profile.ip_address ?? '');
+  setData(profile);
+}
+
+function buildUpdateFormData(payload: Record<string, unknown>): FormData {
+  const formData = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+
+    if (value instanceof File) {
+      formData.append(key, value);
+      return;
+    }
+
+    formData.append(key, String(value));
+  });
+
+  return formData;
 }
 
 const API_ORIGIN = 'https://ssma-gestor.fluxosistemas.com.br';
 
-function resolveAvatarUrl(img?: string | null): string | undefined {
+function resolveAvatarUrl(
+  img?: string | null,
+  clientId?: number | string,
+): string | undefined {
   if (!img || img === 'null') return undefined;
   if (img.startsWith('http://') || img.startsWith('https://')) return img;
   if (img.startsWith('blob:') || img.startsWith('data:')) return img;
 
-  return `${API_ORIGIN}/${img.replace(/^\/+/, '')}`;
+  const normalized = img.replace(/^\/+/, '');
+
+  if (normalized.includes('/')) {
+    return `${API_ORIGIN}/${normalized}`;
+  }
+
+  if (clientId) {
+    return `${API_ORIGIN}/storage/clients/client_${clientId}/${normalized}`;
+  }
+
+  return `${API_ORIGIN}/${normalized}`;
 }
 
 type AccountStatusMeta = {

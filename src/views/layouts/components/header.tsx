@@ -27,7 +27,7 @@ export function Header() {
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
-  const avatarSrc = resolveAvatarUrl(profile?.img);
+  const avatarSrc = resolveAvatarUrl(profile?.img, profile?.id);
 
   return (
     <div className="sticky top-0 backdrop-blur-md bg-white/30 z-[99999999]">
@@ -128,9 +128,20 @@ export function Header() {
 const API_ORIGIN = 'https://ssma-gestor.fluxosistemas.com.br';
 const DEFAULT_AVATAR_URL = 'https://avatars.githubusercontent.com/u/69989490?v=4';
 
-function resolveAvatarUrl(img?: string | null): string {
+function resolveAvatarUrl(img?: string | null, clientId?: number | string): string {
   if (!img || img === 'null') return DEFAULT_AVATAR_URL;
   if (img.startsWith('http://') || img.startsWith('https://')) return img;
+  if (img.startsWith('blob:') || img.startsWith('data:')) return img;
 
-  return `${API_ORIGIN}/${img.replace(/^\/+/, '')}`;
+  const normalized = img.replace(/^\/+/, '');
+
+  if (normalized.includes('/')) {
+    return `${API_ORIGIN}/${normalized}`;
+  }
+
+  if (clientId) {
+    return `${API_ORIGIN}/storage/clients/client_${clientId}/${normalized}`;
+  }
+
+  return `${API_ORIGIN}/${normalized}`;
 }

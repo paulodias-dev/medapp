@@ -5,7 +5,7 @@ type UpdatePayload = Record<string, any> | FormData;
 export async function update(params: UpdatePayload): Promise<any> {
   const { signal } = new AbortController();
   let id: string | number | null = null;
-  let payload: UpdatePayload;
+  const payload = new FormData();
 
   if (params instanceof FormData) {
     id = params.get('id') as string | null;
@@ -13,22 +13,36 @@ export async function update(params: UpdatePayload): Promise<any> {
     if (zipCode && !params.get('cep')) {
       params.set('cep', String(zipCode));
     }
-    payload = params;
+
+    params.forEach((value, key) => {
+      if (key === '_method') return;
+      payload.append(key, value);
+    });
   } else {
     const { id: rawId, zipCode, ...rest } = params;
     id = rawId;
-    payload = {
-      id,
-      ...rest,
-      ...(zipCode ? { cep: zipCode, zipCode } : {}),
-    };
+
+    Object.entries(rest).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      payload.append(key, String(value));
+    });
+
+    if (zipCode) {
+      payload.set('zipCode', String(zipCode));
+      if (!payload.get('cep')) {
+        payload.set('cep', String(zipCode));
+      }
+    }
   }
 
   if (!id) {
     throw new Error('ID do cliente não informado.');
   }
 
-  const { data } = await api.put<any>(`/client/client/${id}`, payload, {
+  payload.set('id', String(id));
+  payload.set('_method', 'PUT');
+
+  const { data } = await api.post<any>(`/client/client/${id}`, payload, {
     signal,
   });
 

@@ -1,6 +1,13 @@
 import { VerifyTokenResponse } from '@/app/models';
 import { clientService } from '@/app/services/client';
-import { cepMask, cpfCnpjMask, maskICMS, maskRGIE, phoneMask } from '@/app/utils';
+import {
+  cepMask,
+  cpfCnpjMask,
+  maskICMS,
+  maskRGIE,
+  phoneMask,
+  resolveClientAvatarUrl,
+} from '@/app/utils';
 import { ProfileAvatarPicker } from '@/views/components/profile-avatar-picker';
 import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
@@ -17,7 +24,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 
 const schema = z.object({
-  type: z.string().optional(),
+  type: z.string().min(1, 'Selecione o tipo de pessoa'),
   name: z.string().min(1, 'O nome completo é obrigatório'),
   name_fantasy: z.string().optional(),
   cpf_cnpj: z.string().optional(),
@@ -83,7 +90,7 @@ export function Personal() {
   const isPessoaJuridica = personType === 'J';
   const avatarValue = form.watch('img');
   const profileName = form.watch('name');
-  const avatarPreview = localAvatarPreview || resolveAvatarUrl(avatarValue, data?.id);
+  const avatarPreview = localAvatarPreview || resolveClientAvatarUrl(avatarValue, data?.id);
   const accountStatus = resolveAccountStatus(data?.status);
   const createdAtLabel = formatDateTime(data?.created_at);
   const updatedAtLabel = formatDateTime(data?.updated_at);
@@ -640,29 +647,6 @@ function buildUpdateFormData(payload: Record<string, unknown>): FormData {
   });
 
   return formData;
-}
-
-const API_ORIGIN = 'https://ssma-gestor.fluxosistemas.com.br';
-
-function resolveAvatarUrl(
-  img?: string | null,
-  clientId?: number | string,
-): string | undefined {
-  if (!img || img === 'null') return undefined;
-  if (img.startsWith('http://') || img.startsWith('https://')) return img;
-  if (img.startsWith('blob:') || img.startsWith('data:')) return img;
-
-  const normalized = img.replace(/^\/+/, '');
-
-  if (normalized.includes('/')) {
-    return `${API_ORIGIN}/${normalized}`;
-  }
-
-  if (clientId) {
-    return `${API_ORIGIN}/storage/clients/client_${clientId}/${normalized}`;
-  }
-
-  return `${API_ORIGIN}/${normalized}`;
 }
 
 type AccountStatusMeta = {

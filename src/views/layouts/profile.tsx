@@ -22,7 +22,7 @@ export function Profile() {
     <>
       <hr className="border-b-[10px] border-[#f5f5f5]" />
 
-      <div className="mx-auto w-full max-w-[1480px] px-4 pb-8">
+      <div className="mx-auto w-full max-w-full px-4 pb-8">
         <header className="animate-slidein200 opacity-0 mt-6 flex items-center justify-between mb-6">
           <div>
             <h1 className="mt-2 text-2xl font-medium tracking-tight text-slate-900 dark:text-slate-100">

@@ -42,8 +42,8 @@ export function Header() {
       className={({ isActive }) =>
         cn(
           "flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium",
-          isActive 
-            ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+          isActive
+            ? "bg-blue-600 text-white shadow-md shadow-blue-200"
             : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
         )
       }
@@ -56,8 +56,8 @@ export function Header() {
   return (
     <div className="sticky top-0 z-[100] w-full">
       <div className="absolute inset-0 bg-white/70 backdrop-blur-md border-b" />
-      
-      <header className="relative max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+
+      <header className="relative max-w-full mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-8">
           <Link to="/" className="hover:opacity-80 transition-opacity">
             <img src="/grupo-ssma.png" className="h-8 w-auto" alt="Logo Grupo SSMA" />
@@ -109,14 +109,14 @@ export function Header() {
                 <p className="text-sm font-semibold text-slate-900 truncate">{profile?.name || 'Usuário'}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-2" />
-              
+
               <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                 <Link to="/profile" className="flex items-center gap-2">
                   <UserIcon size={18} />
                   <span>Configurações</span>
                 </Link>
               </DropdownMenuItem>
-              
+
               <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
                 <Link
                   to="https://wa.me/5579981291760?text=Ol%C3%A1%2C+Preciso+de+ajuda+com%3A+"
@@ -128,7 +128,7 @@ export function Header() {
               </DropdownMenuItem>
 
               <DropdownMenuSeparator className="my-2" />
-              
+
               <DropdownMenuItem asChild className="rounded-lg cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50">
                 <Out />
               </DropdownMenuItem>

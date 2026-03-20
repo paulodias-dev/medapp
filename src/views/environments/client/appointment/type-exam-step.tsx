@@ -21,7 +21,7 @@ import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const iconMap: Record<string, JSX.Element> = {
+const iconMap: Record<string, React.ReactNode> = {
   Admissional: <UserPlus size={24} />,
   Periódico: <Clock size={24} />,
   Demissional: <UserMinus size={24} />,

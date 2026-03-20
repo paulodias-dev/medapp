@@ -1,3 +1,4 @@
+import { cn } from '@/app/utils';
 import { VerifyTokenResponse } from '@/app/models';
 import { clientService } from '@/app/services/client';
 import {
@@ -9,16 +10,28 @@ import {
   resolveClientAvatarUrl,
 } from '@/app/utils';
 import { ProfileAvatarPicker } from '@/views/components/profile-avatar-picker';
-import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
 import { InputFormItem } from '@/views/components/ui/input-form-item';
 import { Label } from '@/views/components/ui/label';
+import { Skeleton } from '@/views/components/ui/skeleton';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { SpinnerGap } from '@phosphor-icons/react';
+import { 
+  SpinnerGap, 
+  User, 
+  IdentificationCard, 
+  Phone, 
+  MapPin, 
+  Info,
+  CalendarBlank,
+  CheckCircle,
+  Buildings,
+  Lightning,
+  ArrowRight
+} from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { UseFormReturn, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -52,6 +65,7 @@ type ProfileFormData = z.infer<typeof schema>;
 
 export function Personal() {
   const [data, setData] = useState<VerifyTokenResponse>();
+  const [loading, setLoading] = useState(true);
   const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(
     null,
   );
@@ -95,7 +109,6 @@ export function Personal() {
     resolveClientAvatarUrl(avatarValue, data?.id, data?.updated_at);
   const accountStatus = resolveAccountStatus(data?.status);
   const createdAtLabel = formatDateTime(data?.created_at);
-  const updatedAtLabel = formatDateTime(data?.updated_at);
 
   const submit = useMutation({
     mutationFn: async (params: ProfileFormData) => {
@@ -132,7 +145,9 @@ export function Personal() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ['profileHeaderAvatar'] });
-      toast.success('Dados atualizados com sucesso.');
+      toast.success('Dados atualizados com sucesso.', {
+        icon: <CheckCircle size={20} weight="fill" className="text-emerald-500" />,
+      });
     },
     onError: (error) => {
       const parsedError = parseApiError(error);
@@ -160,9 +175,11 @@ export function Personal() {
       .verifyToken()
       .then((res) => {
         hydrateProfileForm(res, form, setData, setLocalAvatarPreview);
+        setLoading(false);
       })
       .catch(() => {
         toast.error('Não foi possível carregar os dados do perfil.');
+        setLoading(false);
       });
   }, []);
 
@@ -204,17 +221,17 @@ export function Personal() {
 
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-      const data = await response.json();
+      const dataResponse = await response.json();
 
-      if (data.erro) {
+      if (dataResponse.erro) {
         toast.error('CEP não encontrado.');
         return;
       }
 
-      form.setValue('public_place', data.logradouro, { shouldDirty: true });
-      form.setValue('district', data.bairro, { shouldDirty: true });
-      form.setValue('city', data.localidade, { shouldDirty: true });
-      form.setValue('state', data.uf, { shouldDirty: true });
+      form.setValue('public_place', dataResponse.logradouro, { shouldDirty: true });
+      form.setValue('district', dataResponse.bairro, { shouldDirty: true });
+      form.setValue('city', dataResponse.localidade, { shouldDirty: true });
+      form.setValue('state', dataResponse.uf, { shouldDirty: true });
 
       form.setFocus('number');
     } catch (error) {
@@ -231,85 +248,132 @@ export function Personal() {
     form.setValue('img', '', { shouldDirty: true });
   }
 
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <Skeleton className="h-24 w-full rounded-2xl" />
+        <div className="grid gap-8 xl:grid-cols-[260px_1fr]">
+          <Skeleton className="h-[400px] w-full rounded-2xl" />
+          <div className="space-y-8">
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="animate-slidein200 opacity-0 space-y-6">
-      <section className="rounded-2xl border bg-gradient-to-r from-slate-50 to-white p-5 sm:p-6">
-        <h3 className="text-lg font-semibold text-slate-900">Dados Pessoais</h3>
-        <p className="mt-1 text-sm text-slate-500">
-          Atualize os dados da conta e mantenha as informações de contato e
-          endereço sempre corretas.
-        </p>
-      </section>
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8">
+      <header className="relative overflow-hidden rounded-[2rem] border bg-white p-8 shadow-sm">
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-blue-600 font-bold text-sm uppercase tracking-widest">
+              <User size={20} weight="bold" />
+              Perfil do Usuário
+            </div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Dados Pessoais</h1>
+            <p className="text-slate-500 max-w-lg font-medium">
+              Gerencie suas informações cadastrais, endereço e dados de contato para manter sua conta atualizada.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+             <div className="bg-slate-50 border rounded-2xl px-5 py-3 flex items-center gap-3 shadow-inner">
+                <div className={cn("h-3 w-3 rounded-full animate-pulse", accountStatus.label === 'Ativo' ? "bg-emerald-500" : "bg-amber-500")} />
+                <span className="text-sm font-bold text-slate-700 uppercase tracking-tight">{accountStatus.label}</span>
+             </div>
+          </div>
+        </div>
+      </header>
 
       <Form {...form}>
-        <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
-            <aside className="h-fit rounded-2xl border bg-white p-4 xl:sticky xl:top-24">
-              <ProfileAvatarPicker
-                src={avatarPreview}
-                alt={profileName || 'Avatar do perfil'}
-                onPickImage={handlePickAvatar}
-                onRemoveImage={handleRemoveAvatar}
-                disabled={submit.isPending}
-              />
-
-              <section className="mt-4 rounded-xl border bg-slate-50 p-4">
-                <h5 className="text-sm font-semibold text-slate-900">Dados da conta</h5>
-
-                <div className="mt-3 space-y-3 text-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Status</span>
-                    <Badge variant="outline" className={accountStatus.className}>
-                      {accountStatus.label}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Criado em</span>
-                    <span className="text-right text-slate-700">{createdAtLabel}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Atualizado em</span>
-                    <span className="text-right text-slate-700">{updatedAtLabel}</span>
-                  </div>
+        <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="grid gap-8 xl:grid-cols-[280px_minmax(0,1fr)]">
+            <aside className="space-y-6 xl:sticky xl:top-24 h-fit">
+              <div className="rounded-[2rem] border bg-white p-6 shadow-sm">
+                <ProfileAvatarPicker
+                  src={avatarPreview}
+                  alt={profileName || 'Avatar do perfil'}
+                  onPickImage={handlePickAvatar}
+                  onRemoveImage={handleRemoveAvatar}
+                  disabled={submit.isPending}
+                />
+                
+                <div className="mt-8 space-y-4">
+                   <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <CalendarBlank size={18} />
+                        <span className="text-xs font-bold uppercase">Entrou em</span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-900">{createdAtLabel.split(',')[0]}</span>
+                   </div>
+                   <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Lightning size={18} />
+                        <span className="text-xs font-bold uppercase">Acesso IP</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-900 font-mono truncate max-w-[100px]" title={data?.ip_address || undefined}>
+                        {data?.ip_address || '---'}
+                      </span>
+                   </div>
                 </div>
-              </section>
+              </div>
+
+              <div className="rounded-2xl border bg-blue-600 p-6 text-white shadow-lg shadow-blue-200">
+                 <div className="flex items-center gap-2 mb-3">
+                    <Info size={24} weight="fill" />
+                    <h5 className="font-bold">Dica de Segurança</h5>
+                 </div>
+                 <p className="text-sm text-blue-50 font-medium leading-relaxed">
+                    Mantenha seu e-mail sempre atualizado para receber notificações importantes sobre seus atestados.
+                 </p>
+              </div>
             </aside>
 
-            <div className="space-y-6">
-              <section className="rounded-2xl border bg-white p-5">
-                <div className="mb-4">
-                  <h4 className="text-base font-semibold text-slate-900">
-                    Identificação
-                  </h4>
-                  <p className="text-sm text-slate-500">
-                    Defina o tipo da conta e os dados cadastrais principais.
-                  </p>
+            <div className="space-y-8">
+              <section className="rounded-[2.5rem] border bg-white p-8 shadow-sm transition-all hover:shadow-md">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <IdentificationCard size={28} weight="bold" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-900">Identificação</h4>
+                    <p className="text-sm text-slate-500 font-medium">Dados fundamentais do seu cadastro.</p>
+                  </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-2">
                   <div className="md:col-span-2">
-                    <Label>
-                      Tipo de pessoa
-                      <span className="text-red-500">*</span>
-                    </Label>
-
-                    <div className="mt-2 grid gap-3 sm:grid-cols-2">
-                      <Button
+                    <Label className="text-slate-700 font-bold mb-3 block">Tipo de conta</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
                         type="button"
-                        variant={personType === 'F' ? 'default' : 'outline'}
-                        className="rounded-xl"
-                        onClick={() => form.setValue('type', 'F')}>
+                        onClick={() => form.setValue('type', 'F')}
+                        className={cn(
+                          "flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all font-bold",
+                          personType === 'F' 
+                            ? "bg-blue-50 border-blue-600 text-blue-700 shadow-md" 
+                            : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
+                        )}
+                      >
+                        <User size={20} weight={personType === 'F' ? "fill" : "regular"} />
                         Pessoa Física
-                      </Button>
-                      <Button
+                      </button>
+                      <button
                         type="button"
-                        variant={personType === 'J' ? 'default' : 'outline'}
-                        className="rounded-xl"
-                        onClick={() => form.setValue('type', 'J')}>
+                        onClick={() => form.setValue('type', 'J')}
+                        className={cn(
+                          "flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all font-bold",
+                          personType === 'J' 
+                            ? "bg-blue-50 border-blue-600 text-blue-700 shadow-md" 
+                            : "bg-white border-slate-100 text-slate-500 hover:border-slate-200 hover:bg-slate-50"
+                        )}
+                      >
+                        <Buildings size={20} weight={personType === 'J' ? "fill" : "regular"} />
                         Pessoa Jurídica
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
@@ -318,11 +382,7 @@ export function Personal() {
                       control={form.control}
                       name="name"
                       label={isPessoaJuridica ? 'Razão social' : 'Nome completo'}
-                      placeholder={
-                        isPessoaJuridica
-                          ? 'Digite a razão social'
-                          : 'Digite o nome completo'
-                      }
+                      placeholder={isPessoaJuridica ? 'Empresa LTDA' : 'Seu nome completo'}
                       required
                     />
                   </div>
@@ -333,7 +393,7 @@ export function Personal() {
                         control={form.control}
                         name="name_fantasy"
                         label="Nome fantasia"
-                        placeholder="Digite o nome fantasia (opcional)"
+                        placeholder="Nome da Marca"
                       />
                     </div>
                   )}
@@ -342,7 +402,7 @@ export function Personal() {
                     control={form.control}
                     name="cpf_cnpj"
                     label={isPessoaJuridica ? 'CNPJ' : 'CPF'}
-                    placeholder={isPessoaJuridica ? 'Digite o CNPJ' : 'Digite o CPF'}
+                    placeholder={isPessoaJuridica ? '00.000.000/0000-00' : '000.000.000-00'}
                     onChange={(e) => {
                       form.setValue('cpf_cnpj', cpfCnpjMask(e.target.value));
                     }}
@@ -356,11 +416,7 @@ export function Personal() {
                     onChange={(e) => {
                       form.setValue('rg_ie', maskRGIE(e.target.value));
                     }}
-                    placeholder={
-                      isPessoaJuridica
-                        ? 'Digite a inscrição estadual (opcional)'
-                        : 'Digite o RG (opcional)'
-                    }
+                    placeholder="Documento de identidade"
                   />
 
                   {isPessoaJuridica && (
@@ -370,7 +426,7 @@ export function Personal() {
                           control={form.control}
                           name="legal_nature"
                           label="Natureza Jurídica"
-                          placeholder="Digite a natureza jurídica (opcional)"
+                          placeholder="Ex: 206-2 - Sociedade Empresária Limitada"
                         />
                       </div>
 
@@ -378,20 +434,20 @@ export function Personal() {
                         control={form.control}
                         name="icms"
                         label="ICMS"
+                        placeholder="Inscrição no ICMS"
                         onChange={(e) => {
                           form.setValue('icms', maskICMS(e.target.value));
                         }}
-                        placeholder="Digite o ICMS (opcional)"
                       />
 
                       <InputFormItem
                         control={form.control}
                         name="iest"
                         label="IEST"
+                        placeholder="Substituição Tributária"
                         onChange={(e) => {
                           form.setValue('iest', maskICMS(e.target.value));
                         }}
-                        placeholder="Digite o IEST (opcional)"
                       />
 
                       <div className="md:col-span-2">
@@ -399,7 +455,7 @@ export function Personal() {
                           control={form.control}
                           name="municipal_registration"
                           label="Inscrição Municipal"
-                          placeholder="Digite a inscrição municipal (opcional)"
+                          placeholder="Número do registro municipal"
                         />
                       </div>
                     </>
@@ -407,20 +463,23 @@ export function Personal() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border bg-white p-5">
-                <div className="mb-4">
-                  <h4 className="text-base font-semibold text-slate-900">Contato</h4>
-                  <p className="text-sm text-slate-500">
-                    Informações de comunicação da conta.
-                  </p>
+              <section className="rounded-[2.5rem] border bg-white p-8 shadow-sm transition-all hover:shadow-md">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="h-12 w-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <Phone size={28} weight="bold" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-900">Contato</h4>
+                    <p className="text-sm text-slate-500 font-medium">Como podemos falar com você.</p>
+                  </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-2">
                   <InputFormItem
                     control={form.control}
                     name="phone1"
-                    label="Telefone principal"
-                    placeholder="Digite o telefone principal"
+                    label="WhatsApp / Principal"
+                    placeholder="(00) 0 0000-0000"
                     onChange={(e) => {
                       form.setValue('phone1', phoneMask(e.target.value));
                     }}
@@ -430,112 +489,138 @@ export function Personal() {
                   <InputFormItem
                     control={form.control}
                     name="phone2"
-                    label="Telefone auxiliar"
-                    placeholder="Digite o telefone auxiliar (opcional)"
+                    label="Telefone adicional"
+                    placeholder="(00) 0000-0000"
                     onChange={(e) => {
                       form.setValue('phone2', phoneMask(e.target.value));
                     }}
                   />
 
-                  <InputFormItem
-                    control={form.control}
-                    name="email"
-                    label="E-mail"
-                    placeholder="Digite o e-mail"
-                    required
-                  />
+                  <div className="md:col-span-2">
+                    <InputFormItem
+                      control={form.control}
+                      name="email"
+                      label="Endereço de e-mail"
+                      placeholder="seu@email.com"
+                      required
+                    />
+                  </div>
 
-                  <InputFormItem
-                    control={form.control}
-                    name="url"
-                    label="URL"
-                    placeholder="Digite a URL (opcional)"
-                  />
+                  <div className="md:col-span-2">
+                    <InputFormItem
+                      control={form.control}
+                      name="url"
+                      label="Website / Link profissional"
+                      placeholder="https://exemplo.com.br"
+                    />
+                  </div>
                 </div>
               </section>
 
-              <section className="rounded-2xl border bg-white p-5">
-                <div className="mb-4">
-                  <h4 className="text-base font-semibold text-slate-900">Endereço</h4>
-                  <p className="text-sm text-slate-500">
-                    Dados de localização e referência.
-                  </p>
+              <section className="rounded-[2.5rem] border bg-white p-8 shadow-sm transition-all hover:shadow-md">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <MapPin size={28} weight="bold" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-900">Endereço</h4>
+                    <p className="text-sm text-slate-500 font-medium">Sua localização para registros legais.</p>
+                  </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <InputFormItem
-                    control={form.control}
-                    name="zipCode"
-                    label="CEP"
-                    placeholder="Digite o CEP"
-                    onChange={(e) => {
-                      form.setValue('zipCode', cepMask(e.target.value));
-                    }}
-                    onBlur={handleCepBlur}
-                    required
-                  />
+                <div className="grid gap-6 md:grid-cols-6">
+                  <div className="md:col-span-3">
+                    <InputFormItem
+                      control={form.control}
+                      name="zipCode"
+                      label="CEP"
+                      placeholder="00000-000"
+                      onChange={(e) => {
+                        form.setValue('zipCode', cepMask(e.target.value));
+                      }}
+                      onBlur={handleCepBlur}
+                      required
+                    />
+                  </div>
 
-                  <InputFormItem
-                    control={form.control}
-                    name="number"
-                    label="Número"
-                    placeholder="Digite o número"
-                    required
-                  />
+                  <div className="md:col-span-3">
+                    <InputFormItem
+                      control={form.control}
+                      name="number"
+                      label="Número"
+                      placeholder="123"
+                      required
+                    />
+                  </div>
 
-                  <InputFormItem
-                    control={form.control}
-                    name="public_place"
-                    label="Logradouro"
-                    placeholder="Digite o logradouro (opcional)"
-                  />
+                  <div className="md:col-span-6">
+                    <InputFormItem
+                      control={form.control}
+                      name="public_place"
+                      label="Logradouro"
+                      placeholder="Rua, Avenida, etc."
+                    />
+                  </div>
 
-                  <InputFormItem
-                    control={form.control}
-                    name="complement"
-                    label="Complemento"
-                    placeholder="Digite o complemento (opcional)"
-                  />
+                  <div className="md:col-span-6">
+                    <InputFormItem
+                      control={form.control}
+                      name="complement"
+                      label="Complemento"
+                      placeholder="Apartamento, Bloco, etc."
+                    />
+                  </div>
 
-                  <InputFormItem
-                    control={form.control}
-                    name="district"
-                    label="Bairro"
-                    placeholder="Digite o bairro"
-                    required
-                  />
+                  <div className="md:col-span-3">
+                    <InputFormItem
+                      control={form.control}
+                      name="district"
+                      label="Bairro"
+                      placeholder="Nome do bairro"
+                      required
+                    />
+                  </div>
 
-                  <InputFormItem
-                    control={form.control}
-                    name="city"
-                    label="Cidade"
-                    placeholder="Digite a cidade"
-                    required
-                  />
+                  <div className="md:col-span-2">
+                    <InputFormItem
+                      control={form.control}
+                      name="city"
+                      label="Cidade"
+                      placeholder="Localidade"
+                      required
+                    />
+                  </div>
 
-                  <InputFormItem
-                    control={form.control}
-                    name="state"
-                    label="Estado"
-                    placeholder="Digite o estado"
-                    required
-                  />
-
-                  <InputFormItem
-                    control={form.control}
-                    name="ip_address"
-                    label="Endereço IP"
-                    placeholder="Digite o endereço IP (opcional)"
-                  />
+                  <div className="md:col-span-1">
+                    <InputFormItem
+                      control={form.control}
+                      name="state"
+                      label="UF"
+                      placeholder="XX"
+                      required
+                    />
+                  </div>
                 </div>
               </section>
             </div>
           </div>
 
-          <div className="flex justify-end border-t pt-4">
-            <Button className="flex items-center gap-2" disabled={submit.isPending}>
-              Salvar alterações
-              {submit.isPending && <SpinnerGap className="h-4 w-4 animate-spin" />}
+          <div className="flex items-center justify-between bg-slate-900 rounded-[2rem] p-6 shadow-2xl text-white">
+             <div className="flex items-center gap-3 ml-4">
+                <CheckCircle size={24} className="text-emerald-400" weight="fill" />
+                <span className="text-sm font-bold opacity-80 uppercase tracking-widest">Os dados serão validados após salvar</span>
+             </div>
+             <Button 
+                size="lg"
+                className="bg-white text-slate-950 hover:bg-blue-500 hover:text-white rounded-[1.5rem] px-10 h-16 text-lg font-bold shadow-xl active:scale-95 transition-all gap-3" 
+                disabled={submit.isPending}
+              >
+              Salvar Alterações
+              {submit.isPending ? (
+                <SpinnerGap className="h-6 w-6 animate-spin" />
+              ) : (
+                <ArrowRight className="h-6 w-6" weight="bold" />
+              )}
             </Button>
           </div>
         </form>

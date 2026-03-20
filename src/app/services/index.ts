@@ -22,7 +22,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem(localStorageKeys.ACCESS_TOKEN);
       localStorage.removeItem(localStorageKeys.USER_DATA);
-      window.location.href = '/login';
+      window.location.href = '/auth';
     }
     return Promise.reject(error);
   }

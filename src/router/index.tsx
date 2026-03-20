@@ -8,6 +8,7 @@ export function Router() {
   return (
     <Routes>
       <Route element={<AuthGuard />}>
+        <Route path="/login" element={<Navigate to="/auth" replace />} />
         <Route path="/auth" element={<Environment.SignIn />} />
         <Route
           path="/forgot-password"

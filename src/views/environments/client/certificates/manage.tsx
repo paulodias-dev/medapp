@@ -23,14 +23,14 @@ import {
   TabsTrigger,
 } from '@/views/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
-import { 
+import {
   DownloadSimple,
-  Eye, 
-  File, 
-  FilePdf, 
+  Eye,
+  File,
+  FilePdf,
   Image as ImageIcon,
-  SpinnerGap, 
-  User, 
+  SpinnerGap,
+  User,
   IdentificationCard,
   Phone,
   Envelope,
@@ -175,9 +175,9 @@ export function Manage({ exam }: ManageProps) {
                 <File size={20} weight="fill" />
               </div>
               <div>
-                <p className="font-semibold text-slate-900">Documentação Completa</p>
+                <p className="font-semibold text-slate-900">Ficha de encaminhamento</p>
                 <p className="text-xs text-slate-500">
-                  {details?.withFilesCount ?? 0} { (details?.withFilesCount ?? 0) === 1 ? 'anexo encontrado' : 'anexos encontrados' }
+                  Informações de Atendimento
                 </p>
               </div>
             </div>
@@ -193,7 +193,7 @@ export function Manage({ exam }: ManageProps) {
               ) : (
                 <FilePdf className="h-4 w-4" weight="bold" />
               )}
-              Vizualizar ASO
+              Vizualizar PDF
             </Button>
           </div>
         </div>

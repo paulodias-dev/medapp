@@ -1,30 +1,14 @@
 import { localStorageKeys } from '@/app/config/local-storage-keys';
 import { useAuth } from '@/app/context/use-auth';
+import { LaudoRealtimePayload } from '@/app/models';
+import { clientService } from '@/app/services/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { getEchoInstance } from './echo';
 
-export type LaudoProntoPayload = {
-  tenant_id: number;
-  branch_id: number;
-  clinical_result_id: number;
-  aso_number: number | string | null;
-  status: number;
-  public: boolean;
-  patient?: {
-    name?: string | null;
-  };
-  clinical_type_result?: {
-    name?: string | null;
-  };
-  links?: {
-    exam_details?: string;
-  };
-  message?: string;
-  event_at?: string;
-};
+export type LaudoProntoPayload = LaudoRealtimePayload;
 
 type UseLaudoRealtimeOptions = {
   enabled?: boolean;
@@ -35,6 +19,29 @@ type UseLaudoRealtimeOptions = {
 
 const DEFAULT_POLLING_INTERVAL_MS = 45_000;
 const QUERY_KEYS_TO_INVALIDATE = [['getAllExams'], ['warningExams'], ['sumaryExams']] as const;
+
+function buildLastEventStorageKey(tenantId: number): string {
+  return `${localStorageKeys.LAST_LAUDO_EVENT_AT_PREFIX}:${tenantId}`;
+}
+
+function getOrInitializeSince(storageKey: string): string {
+  const existing = localStorage.getItem(storageKey);
+  if (existing) {
+    return existing;
+  }
+
+  const nowIso = new Date().toISOString();
+  localStorage.setItem(storageKey, nowIso);
+  return nowIso;
+}
+
+function persistLastEventAt(storageKey: string, eventAt?: string | null): void {
+  if (!eventAt) {
+    return;
+  }
+
+  localStorage.setItem(storageKey, eventAt);
+}
 
 export function useLaudoRealtime(options: UseLaudoRealtimeOptions = {}): void {
   const {
@@ -60,6 +67,9 @@ export function useLaudoRealtime(options: UseLaudoRealtimeOptions = {}): void {
       return;
     }
 
+    const lastEventStorageKey = buildLastEventStorageKey(tenantId);
+    getOrInitializeSince(lastEventStorageKey);
+
     const invalidateRelatedQueries = () => {
       QUERY_KEYS_TO_INVALIDATE.forEach((queryKey) => {
         void queryClient.invalidateQueries({ queryKey: [...queryKey] });
@@ -67,14 +77,71 @@ export function useLaudoRealtime(options: UseLaudoRealtimeOptions = {}): void {
     };
 
     let pollingTimer: ReturnType<typeof setInterval> | null = null;
+    let isPollingInFlight = false;
+
+    const emitPollingToast = (payloads: LaudoProntoPayload[]) => {
+      if (!showToast || payloads.length === 0) {
+        return;
+      }
+
+      if (payloads.length === 1) {
+        const payload = payloads[0];
+        const aso = payload.aso_number ? `ASO #${payload.aso_number}` : 'novo ASO';
+        const patientName = payload.patient?.name ? ` - ${payload.patient.name}` : '';
+        toast.success('Laudo disponível', {
+          description: `${aso}${patientName}`,
+        });
+        return;
+      }
+
+      toast.success('Novos laudos disponíveis', {
+        description: `${payloads.length} laudos foram atualizados.`,
+      });
+    };
+
+    const runPollingCycle = async () => {
+      if (isPollingInFlight) {
+        return;
+      }
+
+      isPollingInFlight = true;
+
+      try {
+        const since = getOrInitializeSince(lastEventStorageKey);
+        const feed = await clientService.realtime.getLaudosRealtime({
+          since,
+          limit: 30,
+        });
+
+        const payloads = feed.data ?? [];
+        const lastEventAt =
+          feed.meta?.last_event_at ??
+          payloads[payloads.length - 1]?.event_at ??
+          null;
+
+        if (payloads.length > 0) {
+          invalidateRelatedQueries();
+          emitPollingToast(payloads);
+          payloads.forEach((payload) => onLaudoPronto?.(payload));
+        }
+
+        persistLastEventAt(lastEventStorageKey, lastEventAt);
+      } catch {
+        // polling errors are ignored to avoid UI noise in temporary network failures
+      } finally {
+        isPollingInFlight = false;
+      }
+    };
 
     const startPolling = () => {
       if (pollingTimer) {
         return;
       }
 
+      void runPollingCycle();
+
       pollingTimer = setInterval(() => {
-        invalidateRelatedQueries();
+        void runPollingCycle();
       }, pollingIntervalMs);
     };
 
@@ -100,6 +167,7 @@ export function useLaudoRealtime(options: UseLaudoRealtimeOptions = {}): void {
 
     const onLaudo = (payload: LaudoProntoPayload) => {
       invalidateRelatedQueries();
+      persistLastEventAt(lastEventStorageKey, payload.event_at ?? new Date().toISOString());
 
       if (showToast) {
         const aso = payload.aso_number ? `ASO #${payload.aso_number}` : 'novo ASO';

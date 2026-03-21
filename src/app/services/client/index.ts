@@ -5,6 +5,7 @@ import { forgotPassword } from './forgot-password';
 import { logout } from './logout';
 import * as masterData from './master-data';
 import * as appointment from './appointment';
+import * as realtime from './realtime';
 import { resetPassword } from './reset-password';
 import * as tenant from './tenant';
 import { update } from './update';
@@ -25,6 +26,7 @@ export const clientService = {
   update,
   changePassword,
   tenant,
+  realtime,
   masterData,
   appointment,
 };

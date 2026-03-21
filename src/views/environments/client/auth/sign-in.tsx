@@ -2,12 +2,14 @@ import { useAuth } from '@/app/context/use-auth';
 import { AuthProps } from '@/app/models';
 import { getRememberMePreference } from '@/app/utils/auth-storage';
 import { cpfCnpjMask } from '@/app/utils';
+import { digitsOnly, isValidCpfOrCnpj } from '@/app/utils/document-validator';
 import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
 import { InputFormItem } from '@/views/components/ui/input-form-item';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUpRight, Eye, EyeSlash, SpinnerGap } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
@@ -20,58 +22,7 @@ const schema = z.object({
       required_error: 'Esse campo não pode ser nulo.',
     })
     .min(1, { message: 'Insira valores nesse campo.' })
-    .refine((value: string) => {
-      if (typeof value !== 'string') return false;
-
-      value = value.replace(/[^\d]+/g, '');
-
-      if (value.length === 11) {
-        // CPF validation
-        if (value.match(/(\d)\1{10}/)) return false;
-
-        const cpfDigits = value.split('').map((el) => +el);
-
-        function handleRest(count: number): number {
-          return (
-            ((cpfDigits
-              .slice(0, count - 12)
-              .reduce((sum, el, index) => sum + el * (count - index), 0) *
-              10) %
-              11) %
-            10
-          );
-        }
-
-        return (
-          handleRest(10) === cpfDigits[9] && handleRest(11) === cpfDigits[10]
-        );
-      } else if (value.length === 14) {
-        // CNPJ validation
-        if (value.match(/(\d)\1{13}/)) return false;
-
-        const cnpjDigits = value.split('').map((el) => +el);
-
-        function handleRest(count: number): number {
-          const length = count - 7;
-          const numbers = cnpjDigits.slice(0, length);
-
-          const sum = numbers.reduce(
-            (acc, num, index) => acc + num * (length + 1 - index),
-            0,
-          );
-
-          const rest = sum % 11;
-
-          return rest < 2 ? 0 : 11 - rest;
-        }
-
-        return (
-          handleRest(12) === cnpjDigits[12] && handleRest(13) === cnpjDigits[13]
-        );
-      }
-
-      return false;
-    }, 'Digite um CPF ou CNPJ válido.'),
+    .refine((value: string) => isValidCpfOrCnpj(value), 'Digite um CPF ou CNPJ válido.'),
   password: z
     .string({
       required_error: 'Este campo não pode ser vazio.',
@@ -98,16 +49,22 @@ export function SignIn() {
     mutationFn: async (payload: { credentials: AuthProps; remember: boolean }) => {
       await signIn(payload.credentials, { remember: payload.remember });
     },
-    onError: (error) => {
-      console.error('Authentication failed: response is null');
+    onError: (error: unknown) => {
+      const errorMessage = resolveApiErrorMessage(error);
       toast.error('Falha ao autenticar. Tente novamente.', {
-        description: error.message,
+        description: errorMessage,
       });
     },
   });
 
   function onSubmit(data: AuthProps) {
-    mutate({ credentials: data, remember: rememberMe });
+    mutate({
+      credentials: {
+        ...data,
+        cpf_cnpj: digitsOnly(data.cpf_cnpj),
+      },
+      remember: rememberMe,
+    });
   }
 
   return (
@@ -220,4 +177,30 @@ export function SignIn() {
       </div>
     </div>
   );
+}
+
+function resolveApiErrorMessage(error: unknown): string {
+  if (error instanceof AxiosError) {
+    const responseData = error.response?.data as
+      | { error?: string; message?: string; details?: Record<string, string[]> | string }
+      | undefined;
+
+    if (responseData?.error) {
+      return responseData.error;
+    }
+
+    if (responseData?.message) {
+      return responseData.message;
+    }
+
+    if (typeof responseData?.details === 'string') {
+      return responseData.details;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Não foi possível concluir a autenticação.';
 }

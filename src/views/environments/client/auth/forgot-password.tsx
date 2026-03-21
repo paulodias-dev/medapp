@@ -1,11 +1,13 @@
 import { ForgotPasswordProps } from '@/app/models';
 import { clientService } from '@/app/services/client';
+import { digitsOnly, isValidCpfOrCnpj } from '@/app/utils/document-validator';
 import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
 import { InputFormItem } from '@/views/components/ui/input-form-item';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUpRight, SpinnerGap } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -16,58 +18,7 @@ const schema = z.object({
       required_error: 'Esse campo não pode ser nulo.',
     })
     .min(1, { message: 'Insira valores nesse campo.' })
-    .refine((value: string) => {
-      if (typeof value !== 'string') return false;
-
-      value = value.replace(/[^\d]+/g, '');
-
-      if (value.length === 11) {
-        // CPF validation
-        if (value.match(/(\d)\1{10}/)) return false;
-
-        const cpfDigits = value.split('').map((el) => +el);
-
-        function handleRest(count: number): number {
-          return (
-            ((cpfDigits
-              .slice(0, count - 12)
-              .reduce((sum, el, index) => sum + el * (count - index), 0) *
-              10) %
-              11) %
-            10
-          );
-        }
-
-        return (
-          handleRest(10) === cpfDigits[9] && handleRest(11) === cpfDigits[10]
-        );
-      } else if (value.length === 14) {
-        // CNPJ validation
-        if (value.match(/(\d)\1{13}/)) return false;
-
-        const cnpjDigits = value.split('').map((el) => +el);
-
-        function handleRest(count: number): number {
-          const length = count - 7;
-          const numbers = cnpjDigits.slice(0, length);
-
-          const sum = numbers.reduce(
-            (acc, num, index) => acc + num * (length + 1 - index),
-            0,
-          );
-
-          const rest = sum % 11;
-
-          return rest < 2 ? 0 : 11 - rest;
-        }
-
-        return (
-          handleRest(12) === cnpjDigits[12] && handleRest(13) === cnpjDigits[13]
-        );
-      }
-
-      return false;
-    }, 'Digite um CPF ou CNPJ válido.'),
+    .refine((value: string) => isValidCpfOrCnpj(value), 'Digite um CPF ou CNPJ válido.'),
   email: z
     .string({
       required_error: 'Esse campo não pode ser nulo.',
@@ -89,16 +40,19 @@ export function ForgotPassword() {
       const data = await clientService.forgotPassword(props);
       toast.success(data);
     },
-    onError: (error) => {
-      console.error('Authentication failed: response is null');
+    onError: (error: unknown) => {
+      const errorMessage = resolveApiErrorMessage(error);
       toast.error('Falha ao autenticar. Tente novamente.', {
-        description: error.message,
+        description: errorMessage,
       });
     },
   });
 
   function onSubmit(data: ForgotPasswordProps) {
-    mutate(data);
+    mutate({
+      ...data,
+      cpf_cnpj: digitsOnly(data.cpf_cnpj),
+    });
   }
 
   return (
@@ -187,4 +141,30 @@ export function ForgotPassword() {
       </div>
     </div>
   );
+}
+
+function resolveApiErrorMessage(error: unknown): string {
+  if (error instanceof AxiosError) {
+    const responseData = error.response?.data as
+      | { error?: string; message?: string; details?: Record<string, string[]> | string }
+      | undefined;
+
+    if (responseData?.error) {
+      return responseData.error;
+    }
+
+    if (responseData?.message) {
+      return responseData.message;
+    }
+
+    if (typeof responseData?.details === 'string') {
+      return responseData.details;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Não foi possível concluir a solicitação.';
 }

@@ -1,3 +1,5 @@
+import { localStorageKeys } from '@/app/config/local-storage-keys';
+import { useAuth } from '@/app/context/use-auth';
 import { clientService } from '@/app/services/client';
 import { resolveClientAvatarUrl } from '@/app/utils';
 import { Button } from '@/views/components/ui/button';
@@ -27,15 +29,19 @@ import {
   WhatsappLogo,
   List,
   SignOut,
-  CaretRight
+  CaretRight,
+  SpinnerGap,
 } from '@phosphor-icons/react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Out } from './out';
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { user, switchTenant } = useAuth();
 
   const { data: profile } = useQuery({
     queryKey: ['profileHeaderAvatar'],
@@ -43,6 +49,32 @@ export function Header() {
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
+
+  const { data: tenants = [] } = useQuery({
+    queryKey: ['client-tenants'],
+    queryFn: clientService.tenant.listTenants,
+    staleTime: 1000 * 60 * 10,
+    retry: false,
+  });
+
+  const switchTenantMutation = useMutation({
+    mutationFn: (tenantId: number) => switchTenant(tenantId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries();
+      toast.success('Empresa ativa atualizada com sucesso.');
+      window.location.href = '/';
+    },
+    onError: () => {
+      toast.error('Não foi possível trocar a empresa ativa.');
+    },
+  });
+
+  const activeTenantId = Number(
+    user?.id ??
+      localStorage.getItem(localStorageKeys.ACTIVE_TENANT_ID) ??
+      profile?.id ??
+      0
+  );
 
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -253,6 +285,59 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
               </div>
+
+              {tenants.length > 1 && (
+                <>
+                  <DropdownMenuSeparator className="my-2 bg-slate-100" />
+
+                  <div className="px-3 py-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                      Empresas vinculadas
+                    </p>
+
+                    <div className="grid gap-1">
+                      {tenants.map((tenant) => {
+                        const isActive = Number(tenant.id) === activeTenantId;
+                        const isLoading =
+                          switchTenantMutation.isPending &&
+                          switchTenantMutation.variables === tenant.id;
+
+                        return (
+                          <button
+                            key={tenant.id}
+                            type="button"
+                            disabled={isActive || switchTenantMutation.isPending}
+                            onClick={() => switchTenantMutation.mutate(tenant.id)}
+                            className={cn(
+                              'w-full rounded-xl border px-3 py-2 text-left transition-colors',
+                              isActive
+                                ? 'border-blue-200 bg-blue-50 text-blue-700'
+                                : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                            )}>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-bold">
+                                  {tenant.name_fantasy || tenant.name}
+                                </p>
+                                <p className="text-[11px] text-slate-500">
+                                  {isActive ? 'Empresa ativa' : `Empresa #${tenant.id}`}
+                                </p>
+                              </div>
+
+                              {isLoading && (
+                                <SpinnerGap
+                                  size={16}
+                                  className="animate-spin text-slate-500"
+                                />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <DropdownMenuSeparator className="my-2 bg-slate-100" />
 

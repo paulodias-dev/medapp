@@ -14,6 +14,23 @@ export type AuthResponseProps = {
   email: string;
   email_verified_at: string | null;
   api_token: string;
+  expires_in?: number;
+};
+
+export type TenantSummary = {
+  id: number;
+  name: string;
+  name_fantasy: string | null;
+  img: string | null;
+  branch_id: number;
+};
+
+export type SwitchTenantResponse = {
+  id: number;
+  name: string;
+  email: string;
+  api_token: string;
+  expires_in?: number;
 };
 
 export type VerifyTokenResponse = {

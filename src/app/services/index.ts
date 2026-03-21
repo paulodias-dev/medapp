@@ -19,6 +19,7 @@ let requestQueue: Array<{
 function clearAuthAndRedirect() {
   localStorage.removeItem(localStorageKeys.ACCESS_TOKEN);
   localStorage.removeItem(localStorageKeys.USER_DATA);
+  localStorage.removeItem(localStorageKeys.ACTIVE_TENANT_ID);
   window.location.href = '/auth';
 }
 
@@ -67,9 +68,15 @@ async function refreshToken(): Promise<string> {
 // Request interceptor to add Authorization header
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
+  const activeTenantId = localStorage.getItem(localStorageKeys.ACTIVE_TENANT_ID);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  if (activeTenantId) {
+    config.headers['X-Tenant-ID'] = activeTenantId;
+  }
+
   return config;
 });
 

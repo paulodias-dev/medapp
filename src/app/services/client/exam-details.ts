@@ -37,6 +37,8 @@ type ApiExamDetailPayload = {
   id: number;
   aso_number: number | null;
   aso_date: string | null;
+  comment?: string | null;
+  observation?: string | null;
   status: number;
   public: boolean;
   created_at: string;
@@ -103,6 +105,8 @@ function normalizeExamDetailResponse(
     id: payload.id,
     aso_number: payload.aso_number ?? null,
     aso_date: payload.aso_date ?? null,
+    comment: payload.comment ?? null,
+    observation: payload.observation ?? null,
     status: payload.status,
     public: Boolean(payload.public),
     created_at: payload.created_at,
@@ -199,11 +203,37 @@ type CancelExamResponse = {
   };
 };
 
+type RescheduleExamResponse = {
+  success: boolean;
+  message: string;
+  data?: {
+    id: number;
+    status: number;
+    aso_date?: string | null;
+    comment?: string | null;
+    observation?: string | null;
+  };
+};
+
 export async function cancelExamRequest(
   id: number | string,
   reason?: string,
 ): Promise<CancelExamResponse> {
   const payload = reason?.trim() ? { reason: reason.trim() } : {};
   const { data } = await api.post<CancelExamResponse>(`/client/exam/${id}/cancel`, payload);
+  return data;
+}
+
+export async function rescheduleExamRequest(
+  id: number | string,
+  payload: { date: string; time?: string; reason?: string },
+): Promise<RescheduleExamResponse> {
+  const dataPayload = {
+    date: payload.date,
+    ...(payload.time?.trim() ? { time: payload.time.trim() } : {}),
+    ...(payload.reason?.trim() ? { reason: payload.reason.trim() } : {}),
+  };
+
+  const { data } = await api.post<RescheduleExamResponse>(`/client/exam/${id}/reschedule`, dataPayload);
   return data;
 }

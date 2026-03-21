@@ -59,6 +59,8 @@ export type ClinicalResultDetail = {
   id: number;
   aso_number: number | null;
   aso_date: string | null;
+  comment?: string | null;
+  observation?: string | null;
   status: ClinicalResultStatus;
   public: boolean;
   created_at: string;

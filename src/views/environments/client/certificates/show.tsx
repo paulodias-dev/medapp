@@ -1,4 +1,5 @@
 import { clientService } from '@/app/services/client';
+import { useAppointmentSettings } from '@/app/hooks/use-appointment-settings';
 import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
 import {
@@ -11,6 +12,7 @@ import {
 } from '@/views/components/ui/dialog';
 import { Textarea } from '@/views/components/ui/textarea';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Input } from '@/views/components/ui/input';
 import { CalendarBlank, FilePdf, SpinnerGap, User } from '@phosphor-icons/react';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { useState } from 'react';
@@ -57,13 +59,28 @@ function formatDate(value?: string | null, withTime = false): string {
   }).format(parsed);
 }
 
+function getTodayDateInputValue(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function extractRequestedTime(comment?: string | null): string {
+  if (!comment) return '';
+  const matched = comment.match(/Horário solicitado:\s*([0-2]\d:[0-5]\d)/i);
+  return matched?.[1] ?? '';
+}
+
 export function CertificateShow() {
   const queryClient = useQueryClient();
+  const { isSchedulingEnabled, isLoading: appointmentSettingsLoading } = useAppointmentSettings();
   const { id } = useParams();
   const location = useLocation();
   const [openingPdf, setOpeningPdf] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
   const examId = Number(id);
   const isValidExamId = Number.isFinite(examId) && examId > 0;
 
@@ -95,6 +112,49 @@ export function CertificateShow() {
       toast.error('Não foi possível cancelar a solicitação.');
     },
   });
+
+  const rescheduleMutation = useMutation({
+    mutationFn: () =>
+      clientService.rescheduleExamRequest(examId, {
+        date: rescheduleDate,
+        time: rescheduleTime || undefined,
+        reason: rescheduleReason || undefined,
+      }),
+    onSuccess: (response) => {
+      toast.success(response.message || 'Solicitação reagendada com sucesso.');
+      setRescheduleDialogOpen(false);
+      setRescheduleReason('');
+      void query.refetch();
+      void queryClient.invalidateQueries({ queryKey: ['getAllExams'] });
+      void queryClient.invalidateQueries({ queryKey: ['sumaryExams'] });
+      void queryClient.invalidateQueries({ queryKey: ['warningExams'] });
+      void queryClient.invalidateQueries({ queryKey: ['laudo-notifications-feed'] });
+    },
+    onError: () => {
+      toast.error('Não foi possível reagendar a solicitação.');
+    },
+  });
+
+  function openRescheduleDialog() {
+    setRescheduleDate(details?.aso_date ?? getTodayDateInputValue());
+    setRescheduleTime(extractRequestedTime(details?.comment));
+    setRescheduleReason('');
+    setRescheduleDialogOpen(true);
+  }
+
+  function handleConfirmReschedule() {
+    if (!rescheduleDate) {
+      toast.error('Informe a data para reagendar.');
+      return;
+    }
+
+    if (rescheduleDate < getTodayDateInputValue()) {
+      toast.error('Não é permitido reagendar para data anterior.');
+      return;
+    }
+
+    rescheduleMutation.mutate();
+  }
 
   async function handleOpenPdf() {
     if (!isValidExamId) return;
@@ -218,6 +278,13 @@ export function CertificateShow() {
                 </div>
 
                 <div className="rounded-2xl border bg-slate-50 p-4 space-y-1">
+                  <p className="text-xs uppercase font-bold tracking-wider text-slate-500">Horário solicitado</p>
+                  <p className="text-base font-semibold text-slate-900">
+                    {extractRequestedTime(details.comment) || '-'}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border bg-slate-50 p-4 space-y-1">
                   <p className="text-xs uppercase font-bold tracking-wider text-slate-500">Atualizado em</p>
                   <p className="text-base font-semibold text-slate-900">{formatDate(details.updated_at, true)}</p>
                 </div>
@@ -272,6 +339,17 @@ export function CertificateShow() {
                 </Button>
 
                 {Number(details.status) === 0 && (
+                  <>
+                    {!appointmentSettingsLoading && isSchedulingEnabled && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
+                        onClick={openRescheduleDialog}>
+                        Reagendar solicitação
+                      </Button>
+                    )}
+
                   <Button
                     type="button"
                     variant="outline"
@@ -279,6 +357,7 @@ export function CertificateShow() {
                     onClick={() => setCancelDialogOpen(true)}>
                     Cancelar solicitação
                   </Button>
+                  </>
                 )}
               </aside>
             </div>
@@ -330,6 +409,79 @@ export function CertificateShow() {
                 </>
               ) : (
                 'Confirmar cancelamento'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <DialogContent className="z-[999999] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Reagendar solicitação</DialogTitle>
+            <DialogDescription>
+              Defina nova data e horário para esta solicitação pendente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Data</p>
+              <Input
+                type="date"
+                min={getTodayDateInputValue()}
+                value={rescheduleDate}
+                onChange={(event) => setRescheduleDate(event.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Horário (opcional)</p>
+              <Input
+                type="time"
+                value={rescheduleTime}
+                onChange={(event) => setRescheduleTime(event.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Motivo (opcional)
+            </p>
+            <Textarea
+              value={rescheduleReason}
+              onChange={(event) => setRescheduleReason(event.target.value)}
+              placeholder="Ex.: mudança de disponibilidade do colaborador."
+              className="min-h-[100px] rounded-xl"
+              maxLength={500}
+            />
+            <p className="text-xs text-slate-400">{rescheduleReason.length}/500</p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setRescheduleDialogOpen(false)}
+              disabled={rescheduleMutation.isPending}>
+              Voltar
+            </Button>
+            <Button
+              type="button"
+              className="rounded-xl"
+              onClick={handleConfirmReschedule}
+              disabled={rescheduleMutation.isPending}>
+              {rescheduleMutation.isPending ? (
+                <>
+                  <SpinnerGap className="h-4 w-4 animate-spin" />
+                  Reagendando...
+                </>
+              ) : (
+                'Confirmar reagendamento'
               )}
             </Button>
           </DialogFooter>

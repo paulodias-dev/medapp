@@ -5,6 +5,7 @@ import {
   getExamFileDownloadUrl,
   getExamFileViewerUrl,
   getExamPdfBlob,
+  rescheduleExamRequest,
 } from './exam-details';
 import { getAppointmentSettings } from './appointment-settings';
 import { getAllExams } from './exams-list';
@@ -32,6 +33,7 @@ export const clientService = {
   getPatientByCpf,
   getExamById,
   cancelExamRequest,
+  rescheduleExamRequest,
   getExamFileViewerUrl,
   getExamFileDownloadUrl,
   getExamPdfBlob,

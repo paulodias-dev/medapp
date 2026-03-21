@@ -9,6 +9,29 @@ import { Link } from 'react-router-dom';
 const sortableHeaderClass =
   'h-8 px-2 -ml-2 justify-start font-semibold text-slate-600 hover:bg-slate-100';
 
+function digitsOnly(value: string | null | undefined): string {
+  return (value ?? '').replace(/\D/g, '');
+}
+
+function getCertificateRequestUrl(cpf: string | null): string {
+  const normalizedCpf = digitsOnly(cpf);
+  if (normalizedCpf.length !== 11) {
+    return '/certificate';
+  }
+
+  const params = new URLSearchParams();
+  params.set('cpf', normalizedCpf);
+
+  return `/certificate?${params.toString()}`;
+}
+
+function getCertificatesListUrl(patientId: number): string {
+  const params = new URLSearchParams();
+  params.set('patientId', String(patientId));
+
+  return `/certificates?${params.toString()}`;
+}
+
 export const columns: ColumnDef<ClientPatientListItem>[] = [
   {
     accessorKey: 'name',
@@ -88,10 +111,14 @@ export const columns: ColumnDef<ClientPatientListItem>[] = [
   {
     id: 'actions',
     header: () => <div className="text-center">Ações</div>,
-    cell: () => (
-      <div className="flex items-center justify-center">
+    cell: ({ row }) => (
+      <div className="flex items-center justify-center gap-2">
         <Button asChild size="sm" variant="outline" className="rounded-xl">
-          <Link to="/certificate">Solicitar exame</Link>
+          <Link to={getCertificateRequestUrl(row.original.cpf)}>Solicitar exame</Link>
+        </Button>
+
+        <Button asChild size="sm" variant="ghost" className="rounded-xl">
+          <Link to={getCertificatesListUrl(row.original.id)}>Ver atestados</Link>
         </Button>
       </div>
     ),

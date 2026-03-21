@@ -23,6 +23,7 @@ import { columns } from './columns';
 export function Employees() {
   const { user } = useAuth();
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [searchValue, setSearchValue] = useState('');
 
   const {
     data: patientsData,
@@ -73,7 +74,7 @@ export function Employees() {
           </div>
 
           <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 shadow-sm">
-            {patients.length} colaboradores
+            {table.getFilteredRowModel().rows.length} colaboradores
           </div>
         </div>
       </div>
@@ -94,9 +95,11 @@ export function Employees() {
               <Input
                 className="h-10 w-full sm:w-72 rounded-xl border-slate-200 text-sm"
                 placeholder="Pesquisar por nome..."
-                onChange={(event) =>
-                  table.getColumn('name')?.setFilterValue(event.target.value)
-                }
+                value={searchValue}
+                onChange={(event) => {
+                  setSearchValue(event.target.value);
+                  table.getColumn('name')?.setFilterValue(event.target.value);
+                }}
               />
               <Button
                 asChild

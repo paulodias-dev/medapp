@@ -6,7 +6,7 @@ import { Newspaper } from '@phosphor-icons/react';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { format, isBefore, startOfDay } from 'date-fns';
 
 import { Calendar } from './components/calendar';
@@ -15,6 +15,7 @@ import { useAppointment } from '@/app/context/appointment-context';
 
 export function DateStep() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isSchedulingEnabled, isLoading: appointmentSettingsLoading } = useAppointmentSettings();
   const { data: appointmentData, setStepData } = useAppointment();
   const today = startOfDay(new Date());
@@ -38,9 +39,15 @@ export function DateStep() {
 
   useEffect(() => {
     if (!appointmentSettingsLoading && !isSchedulingEnabled) {
-      navigate('/certificate/employee', { replace: true });
+      navigate(
+        {
+          pathname: '/certificate/employee',
+          search: location.search,
+        },
+        { replace: true },
+      );
     }
-  }, [appointmentSettingsLoading, isSchedulingEnabled, navigate]);
+  }, [appointmentSettingsLoading, isSchedulingEnabled, location.search, navigate]);
 
   if (appointmentSettingsLoading || !isSchedulingEnabled) {
     return (
@@ -191,7 +198,12 @@ export function DateStep() {
               <Button
                 type="button"
                 disabled={!selectedDate || !selectedTime}
-                onClick={() => navigate('/certificate/employee')}
+                onClick={() =>
+                  navigate({
+                    pathname: '/certificate/employee',
+                    search: location.search,
+                  })
+                }
                 className="rounded-xl gap-1">
                 Continuar
                 <ArrowUpRight className="w-4" />

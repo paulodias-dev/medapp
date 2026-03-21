@@ -17,7 +17,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Newspaper } from '@phosphor-icons/react';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   AppointmentEmployeeForm,
@@ -32,6 +32,7 @@ type LookupState = 'idle' | 'searching' | 'found' | 'not_found' | 'error';
 
 export function EmployeeDataStep() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isSchedulingEnabled, isLoading: appointmentSettingsLoading } = useAppointmentSettings();
   const { data: appointmentData, setStepData } = useAppointment();
   const employee = appointmentData.employee;
@@ -40,6 +41,15 @@ export function EmployeeDataStep() {
   const [lookupMessage, setLookupMessage] = useState('');
   const [showFieldErrors, setShowFieldErrors] = useState(false);
   const lastSearchedCpfRef = useRef('');
+  const hasAppliedPrefillCpfRef = useRef(false);
+  const cpfFromQuery = useMemo(() => {
+    const normalizedCpf = digitsOnly(searchParams.get('cpf') ?? '');
+    if (normalizedCpf.length !== 11 || !isValidCpf(normalizedCpf)) {
+      return '';
+    }
+
+    return normalizedCpf;
+  }, [searchParams]);
 
   const { data: departments = [] } = useQuery({
     queryKey: ['departments'],
@@ -83,6 +93,28 @@ export function EmployeeDataStep() {
       setLookupMessage('Não foi possível consultar o CPF neste momento.');
     },
   });
+
+  useEffect(() => {
+    if (hasAppliedPrefillCpfRef.current) {
+      return;
+    }
+
+    if (!cpfFromQuery) {
+      return;
+    }
+
+    const currentCpf = digitsOnly(employee.cpf);
+    if (currentCpf.length === 11) {
+      hasAppliedPrefillCpfRef.current = true;
+      return;
+    }
+
+    setStepData('employee', {
+      ...employee,
+      cpf: cpfMask(cpfFromQuery),
+    });
+    hasAppliedPrefillCpfRef.current = true;
+  }, [cpfFromQuery, employee, setStepData]);
 
   useEffect(() => {
     const normalizedCpf = digitsOnly(employee.cpf);

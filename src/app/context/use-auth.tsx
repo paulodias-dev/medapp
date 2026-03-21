@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { localStorageKeys } from '@/app/config/local-storage-keys';
 import { AuthProps, SwitchTenantResponse } from '@/app/models';
+import { disconnectEcho } from '@/app/realtime/echo';
 import { api } from '@/app/services';
 import { clientService } from '@/app/services/client';
 import {
@@ -63,6 +64,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const persistAuthSession = useCallback(
     (props: { id: number; name: string; email: string; api_token: string }) => {
+      disconnectEcho();
+
       const userData = {
         id: props.id,
         name: props.name,
@@ -104,6 +107,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   const signOut = useCallback(() => {
+    disconnectEcho();
+
     const token = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
 
     if (token && !checkTokenExpiration(token)) {

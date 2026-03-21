@@ -1,10 +1,9 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/views/components/ui/card';
+import { cn } from '@/app/utils';
 
 type AsoComplianceProps = {
   totalAsos: number;
@@ -27,33 +26,45 @@ export function AsoCompliance({
     {
       title: 'Total de ASOs',
       amount: totalAsos,
-      description: 'Registros no período consultado',
-      textColor: '#0f172a',
-      bgColor: 'bg-[#dbeafe]',
+      description: 'Registros no período',
+      bg: 'bg-blue-50',
+      border: 'border-blue-100',
+      amountColor: 'text-blue-700',
+      labelColor: 'text-blue-600',
+      descColor: 'text-blue-400',
       key: 'total',
     },
     {
       title: 'ASOs Aprovados',
       amount: activeAsos,
-      description: 'Registros com status aprovado',
-      textColor: '#e2e8f0',
-      bgColor: 'bg-[#1d4ed8]',
-      key: 'public',
+      description: 'Status aprovado',
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-100',
+      amountColor: 'text-emerald-700',
+      labelColor: 'text-emerald-600',
+      descColor: 'text-emerald-400',
+      key: 'active',
     },
     {
       title: 'Com Alteração',
       amount: warningAsos,
-      description: "ASO's com warning identificado",
-      textColor: '#e2e8f0',
-      bgColor: 'bg-[#1e3a8a]',
+      description: 'Requerem atenção',
+      bg: 'bg-amber-50',
+      border: 'border-amber-100',
+      amountColor: 'text-amber-700',
+      labelColor: 'text-amber-600',
+      descColor: 'text-amber-400',
       key: 'warning',
     },
     {
-      title: 'Pacientes Impactados',
+      title: 'Pacientes Afetados',
       amount: impactedPatients,
-      description: 'Pacientes distintos com alteração',
-      textColor: '#e2e8f0',
-      bgColor: 'bg-[#1e293b]',
+      description: 'Colaboradores distintos',
+      bg: 'bg-slate-50',
+      border: 'border-slate-200',
+      amountColor: 'text-slate-700',
+      labelColor: 'text-slate-600',
+      descColor: 'text-slate-400',
       key: 'patients',
     },
   ];
@@ -63,27 +74,33 @@ export function AsoCompliance({
       {cards.map((card) => (
         <Card
           key={card.key}
-          x-chunk={`dashboard-05-chunk-${card.key}`}
-          className={`flex flex-col justify-center ${card.bgColor}`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-4xl" style={{ color: card.textColor }}>
-              {isLoading ? '...' : card.amount}
-            </CardTitle>
-            <CardDescription style={{ color: card.textColor }}>
+          className={cn(
+            'flex flex-col justify-center shadow-sm',
+            card.bg,
+            card.border,
+          )}>
+          <CardHeader className="pb-1 pt-5">
+            <p className={cn('text-xs font-bold uppercase tracking-widest', card.labelColor)}>
               {card.title}
-            </CardDescription>
+            </p>
           </CardHeader>
-          <CardContent>
-            <div
-              className="text-xs text-muted-foreground"
-              style={{ color: card.textColor }}>
-              {hasError
-                ? 'Não foi possível carregar os indicadores.'
-                : card.description}
-            </div>
+          <CardContent className="pb-5">
+            <p className={cn('text-4xl font-black tracking-tight', card.amountColor)}>
+              {isLoading ? (
+                <span className="animate-pulse">—</span>
+              ) : hasError ? (
+                <span className="text-2xl">!</span>
+              ) : (
+                card.amount
+              )}
+            </p>
+            <p className={cn('mt-1 text-xs font-semibold', card.descColor)}>
+              {hasError ? 'Erro ao carregar' : card.description}
+            </p>
           </CardContent>
         </Card>
       ))}
     </>
   );
 }
+

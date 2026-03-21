@@ -9,6 +9,7 @@ import { ArrowUpRight, CheckCircle, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { canSubmitAppointmentReview } from './form-utils';
 
 function formatDateLabel(date: string | null): string {
   if (!date) {
@@ -290,7 +291,7 @@ function ExamList({ appointmentData, initialSelected, onSubmit, isSubmitting, on
           <Button
             type="button"
             onClick={() => onSubmit(selectedExams)}
-            disabled={selectedExams.length === 0 || !isReviewConfirmed || isSubmitting}
+            disabled={!canSubmitAppointmentReview(selectedExams, isReviewConfirmed, isSubmitting)}
             className="rounded-xl gap-1">
             {isSubmitting ? (
               <>

@@ -11,7 +11,6 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { endOfDay } from 'date-fns';
 import { useState } from 'react';
 
 import { columns } from './columns';
@@ -45,27 +44,36 @@ export function Certificates() {
   });
 
   return (
-    <div>
-      <div className="animate-slidein200 opacity-0 flex items-end justify-start gap-2 py-8 px-4 pb-6 border-b">
-        <h1 className="text-3xl">Atestados</h1>
-        <p className="text-sm text-zinc-400">
-          {String(endOfDay(new Date()).getDate()).padStart(2, '0')}
-        </p>
+    <div className="min-h-screen bg-slate-50/50">
+      {/* Page header */}
+      <div className="border-b border-slate-100 bg-white px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl py-6">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Atestados</h1>
+          <p className="mt-1 text-sm text-slate-500 font-medium">
+            Listagem de todos os ASO's da sua empresa.
+          </p>
+        </div>
       </div>
 
-      <hr className="border-b-[10px] border-[#f5f5f5]" />
+      {/* Content */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+          {isLoading && (
+            <div className="px-6 py-12 text-sm text-slate-400 text-center">
+              Carregando atestados...
+            </div>
+          )}
 
-      {isLoading && (
-        <div className="px-4 py-8 text-sm text-slate-500">Carregando atestados...</div>
-      )}
+          {isError && (
+            <div className="px-6 py-12 text-sm text-red-500 text-center">
+              Não foi possível carregar a listagem de atestados.
+            </div>
+          )}
 
-      {isError && (
-        <div className="px-4 py-8 text-sm text-red-600">
-          Não foi possível carregar a listagem de atestados.
+          {!isLoading && !isError && <DataTable columns={columns} table={table} />}
         </div>
-      )}
-
-      {!isLoading && !isError && <DataTable columns={columns} table={table} />}
+      </div>
     </div>
   );
 }
+

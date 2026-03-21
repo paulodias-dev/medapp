@@ -31,11 +31,10 @@ import {
 } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { Out } from './out';
 
 export function Header() {
-  const location = useLocation();
   const { data: profile } = useQuery({
     queryKey: ['profileHeaderAvatar'],
     queryFn: clientService.verifyToken,
@@ -59,15 +58,22 @@ export function Header() {
       onClick={onClick}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-bold",
+          "relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-semibold group",
           isActive
-            ? "bg-blue-600 text-white shadow-md shadow-blue-200"
-            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            ? "bg-blue-50 text-blue-600"
+            : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
         )
       }
     >
-      {Icon && <Icon size={18} weight={location.pathname === to ? "fill" : "regular"} />}
-      {children}
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <span className="absolute left-1 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-full bg-blue-500" />
+          )}
+          {Icon && <Icon size={16} weight={isActive ? "duotone" : "regular"} />}
+          {children}
+        </>
+      )}
     </NavLink>
   );
 

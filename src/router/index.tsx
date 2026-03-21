@@ -1,27 +1,139 @@
 import { useAuth } from '@/app/context/use-auth';
-import * as Environment from '@/views';
 import * as Layout from '@/views/layouts';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { AppointmentProvider } from '@/app/context/appointment-context';
+import { lazy, Suspense, type ReactNode } from 'react';
+
+const SignIn = lazy(() =>
+  import('@/views/environments/client/auth/sign-in').then((module) => ({
+    default: module.SignIn,
+  })),
+);
+const ForgotPassword = lazy(() =>
+  import('@/views/environments/client/auth/forgot-password').then((module) => ({
+    default: module.ForgotPassword,
+  })),
+);
+const ResetPassword = lazy(() =>
+  import('@/views/environments/client/auth/reset-password').then((module) => ({
+    default: module.ResetPassword,
+  })),
+);
+const Dashboard = lazy(() =>
+  import('@/views/environments/client/dashboard/page').then((module) => ({
+    default: module.Dashboard,
+  })),
+);
+const Certificates = lazy(() =>
+  import('@/views/environments/client/certificates/page').then((module) => ({
+    default: module.Certificates,
+  })),
+);
+const News = lazy(() =>
+  import('@/views/environments/client/news/page').then((module) => ({
+    default: module.News,
+  })),
+);
+const DateStep = lazy(() =>
+  import('@/views/environments/client/appointment/date-step').then((module) => ({
+    default: module.DateStep,
+  })),
+);
+const EmployeeDataStep = lazy(() =>
+  import('@/views/environments/client/appointment/employee-data-step').then((module) => ({
+    default: module.EmployeeDataStep,
+  })),
+);
+const TypeExamStep = lazy(() =>
+  import('@/views/environments/client/appointment/type-exam-step').then((module) => ({
+    default: module.TypeExamStep,
+  })),
+);
+const ExamStep = lazy(() =>
+  import('@/views/environments/client/appointment/exam-step').then((module) => ({
+    default: module.ExamStep,
+  })),
+);
+const Personal = lazy(() =>
+  import('@/views/environments/client/profile/personal').then((module) => ({
+    default: module.Personal,
+  })),
+);
+const Security = lazy(() =>
+  import('@/views/environments/client/profile/security').then((module) => ({
+    default: module.Security,
+  })),
+);
+
+function RouteLoading() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center text-sm font-medium text-slate-400">
+      Carregando...
+    </div>
+  );
+}
+
+function LazyElement({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RouteLoading />}>{children}</Suspense>;
+}
 
 export function Router() {
   return (
     <Routes>
       <Route element={<AuthGuard />}>
         <Route path="/login" element={<Navigate to="/auth" replace />} />
-        <Route path="/auth" element={<Environment.SignIn />} />
+        <Route
+          path="/auth"
+          element={
+            <LazyElement>
+              <SignIn />
+            </LazyElement>
+          }
+        />
         <Route
           path="/forgot-password"
-          element={<Environment.ForgotPassword />}
+          element={
+            <LazyElement>
+              <ForgotPassword />
+            </LazyElement>
+          }
         />
-        <Route path="/reset-password" element={<Environment.ResetPassword />} />
+        <Route
+          path="/reset-password"
+          element={
+            <LazyElement>
+              <ResetPassword />
+            </LazyElement>
+          }
+        />
       </Route>
 
       <Route element={<Layout.Default />}>
         <Route element={<AuthGuard isPrivate />}>
-          <Route path="/" element={<Environment.Dashboard />} />
-          <Route path="/certificates" element={<Environment.Certificates />} />
-          <Route path="/newsroom" element={<Environment.News />} />
+          <Route
+            path="/"
+            element={
+              <LazyElement>
+                <Dashboard />
+              </LazyElement>
+            }
+          />
+          <Route
+            path="/certificates"
+            element={
+              <LazyElement>
+                <Certificates />
+              </LazyElement>
+            }
+          />
+          <Route
+            path="/newsroom"
+            element={
+              <LazyElement>
+                <News />
+              </LazyElement>
+            }
+          />
 
           <Route
             path="/certificate"
@@ -32,17 +144,59 @@ export function Router() {
             }>
             <Route index element={<Navigate to="date" />} />
 
-            <Route path="date" element={<Environment.DateStep />} />
-            <Route path="employee" element={<Environment.EmployeeDataStep />} />
-            <Route path="type" element={<Environment.TypeExamStep />} />
-            <Route path="exam" element={<Environment.ExamStep />} />
+            <Route
+              path="date"
+              element={
+                <LazyElement>
+                  <DateStep />
+                </LazyElement>
+              }
+            />
+            <Route
+              path="employee"
+              element={
+                <LazyElement>
+                  <EmployeeDataStep />
+                </LazyElement>
+              }
+            />
+            <Route
+              path="type"
+              element={
+                <LazyElement>
+                  <TypeExamStep />
+                </LazyElement>
+              }
+            />
+            <Route
+              path="exam"
+              element={
+                <LazyElement>
+                  <ExamStep />
+                </LazyElement>
+              }
+            />
           </Route>
 
           <Route path="/profile" element={<Layout.Profile />}>
             <Route path="" element={<Navigate to="user-data" />} />
 
-            <Route path="user-data" element={<Environment.Personal />} />
-            <Route path="security" element={<Environment.Security />} />
+            <Route
+              path="user-data"
+              element={
+                <LazyElement>
+                  <Personal />
+                </LazyElement>
+              }
+            />
+            <Route
+              path="security"
+              element={
+                <LazyElement>
+                  <Security />
+                </LazyElement>
+              }
+            />
           </Route>
         </Route>
       </Route>

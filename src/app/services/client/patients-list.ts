@@ -15,7 +15,24 @@ export async function getPatientsList(
     params,
   });
 
-  return data?.patients ?? [];
+  const rawData = data as unknown as {
+    patients?: ClientPatientListItem[];
+    data?: ClientPatientListItem[];
+  } | ClientPatientListItem[];
+
+  if (Array.isArray(rawData)) {
+    return rawData;
+  }
+
+  if (Array.isArray(rawData?.patients)) {
+    return rawData.patients;
+  }
+
+  if (Array.isArray(rawData?.data)) {
+    return rawData.data;
+  }
+
+  return [];
 }
 
 export async function getPatientByCpf(cpf: string): Promise<ClientPatientListItem | null> {

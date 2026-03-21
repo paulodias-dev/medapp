@@ -3,6 +3,14 @@ import { api } from '..';
 
 const API_ORIGIN = 'https://ssma-gestor.fluxosistemas.com.br';
 
+function resolveAbsoluteUrl(data: unknown): string {
+  if (typeof data !== 'string' || !data) {
+    return '';
+  }
+
+  return new URL(data, API_ORIGIN).toString();
+}
+
 export async function getExamById(
   id: number | string,
 ): Promise<ClinicalResultDetailResponse> {
@@ -24,9 +32,19 @@ export async function getExamFileViewerUrl(
     signal,
   });
 
-  if (!data) return '';
+  return resolveAbsoluteUrl(data);
+}
 
-  return new URL(data, API_ORIGIN).toString();
+export async function getExamFileDownloadUrl(
+  fileId: number | string,
+): Promise<string> {
+  const { signal } = new AbortController();
+
+  const { data } = await api.get<string>(`/client/fileDownloadById/${fileId}`, {
+    signal,
+  });
+
+  return resolveAbsoluteUrl(data);
 }
 
 export async function getExamPdfBlob(id: number | string): Promise<Blob> {

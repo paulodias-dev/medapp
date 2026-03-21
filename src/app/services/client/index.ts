@@ -1,5 +1,10 @@
 import { auth } from './auth';
-import { getExamById, getExamFileViewerUrl, getExamPdfBlob } from './exam-details';
+import {
+  getExamById,
+  getExamFileDownloadUrl,
+  getExamFileViewerUrl,
+  getExamPdfBlob,
+} from './exam-details';
 import { getAllExams } from './exams-list';
 import { forgotPassword } from './forgot-password';
 import { logout } from './logout';
@@ -22,6 +27,7 @@ export const clientService = {
   getAllExams,
   getExamById,
   getExamFileViewerUrl,
+  getExamFileDownloadUrl,
   getExamPdfBlob,
   update,
   changePassword,

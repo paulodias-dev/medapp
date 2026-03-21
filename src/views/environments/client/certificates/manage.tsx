@@ -24,6 +24,7 @@ import {
 } from '@/views/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { 
+  DownloadSimple,
   Eye, 
   File, 
   FilePdf, 
@@ -51,6 +52,7 @@ type FileWithContext = ClinicalResultExamFile & {
 export function Manage({ exam }: ManageProps) {
   const [open, setOpen] = useState(false);
   const [openingFileId, setOpeningFileId] = useState<number | null>(null);
+  const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null);
   const [openingPdf, setOpeningPdf] = useState(false);
 
   const detailQuery = useQuery({
@@ -116,6 +118,24 @@ export function Manage({ exam }: ManageProps) {
       toast.error('Não foi possível gerar o PDF do ASO.');
     } finally {
       setOpeningPdf(false);
+    }
+  }
+
+  async function handleDownloadFile(file: FileWithContext) {
+    try {
+      setDownloadingFileId(file.id);
+      const fileUrl = await clientService.getExamFileDownloadUrl(file.id);
+
+      if (!fileUrl) {
+        toast.error('Não foi possível gerar o link de download.');
+        return;
+      }
+
+      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      toast.error('Falha ao baixar o arquivo.');
+    } finally {
+      setDownloadingFileId(null);
     }
   }
 
@@ -261,6 +281,19 @@ export function Manage({ exam }: ManageProps) {
                             <SpinnerGap className="w-5 h-5 animate-spin" />
                           ) : (
                             <Eye className="w-5 h-5" />
+                          )}
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-full hover:bg-emerald-50 hover:text-emerald-600"
+                          onClick={() => handleDownloadFile(file)}
+                          disabled={downloadingFileId === file.id}>
+                          {downloadingFileId === file.id ? (
+                            <SpinnerGap className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <DownloadSimple className="w-5 h-5" />
                           )}
                         </Button>
                       </div>

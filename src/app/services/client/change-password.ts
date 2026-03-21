@@ -7,6 +7,6 @@ export interface ChangePasswordParams {
 }
 
 export async function changePassword(params: ChangePasswordParams) {
-  const { data } = await api.post('/client/change-password', params);
+  const { data } = await api.post('client/change-password', params);
   return data;
 }

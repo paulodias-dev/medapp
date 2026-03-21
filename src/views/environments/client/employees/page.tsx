@@ -4,6 +4,7 @@ import { DataTable } from '@/views/components/data-table';
 import { Button } from '@/views/components/ui/button';
 import { Input } from '@/views/components/ui/input';
 import { useQuery } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import {
   getCoreRowModel,
   getFacetedRowModel,
@@ -27,6 +28,7 @@ export function Employees() {
     data: patientsData,
     isLoading,
     isError,
+    error,
     refetch,
   } = useQuery({
     queryKey: ['clientPatients', user?.id ?? 'anonymous'],
@@ -35,6 +37,12 @@ export function Employees() {
   });
 
   const patients = patientsData ?? [];
+  const apiError = error as AxiosError<{ message?: string; error?: string; details?: string }> | null;
+  const apiErrorDetail =
+    apiError?.response?.data?.message ||
+    apiError?.response?.data?.error ||
+    apiError?.response?.data?.details ||
+    apiError?.message;
 
   const table = useReactTable({
     data: patients,
@@ -110,6 +118,9 @@ export function Employees() {
               <p className="text-sm text-red-500">
                 Não foi possível carregar a listagem de colaboradores.
               </p>
+              {apiErrorDetail && (
+                <p className="text-xs text-red-400">{apiErrorDetail}</p>
+              )}
               <Button
                 type="button"
                 variant="outline"

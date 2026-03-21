@@ -10,7 +10,7 @@ export async function getPatientsList(
 ): Promise<ClientPatientListItem[]> {
   const { signal } = new AbortController();
 
-  const { data } = await api.get<ClientPatientsListResponse>('/client/patients', {
+  const { data } = await api.get<ClientPatientsListResponse>('client/patients', {
     signal,
     params,
   });

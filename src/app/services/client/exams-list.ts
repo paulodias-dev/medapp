@@ -1,20 +1,24 @@
 import { api } from '..';
 import { ClinicalResultListItem } from '@/app/models';
 
-type ExamsListResponse = {
-  exams: ClinicalResultListItem[];
+type ApiExamListRow = Partial<ClinicalResultListItem> & {
+  patient_name?: string;
+  patient_phone1?: string | null;
+  patient_email?: string | null;
+  type_result_name?: string;
+  clinicalTypeResult?: {
+    id?: number;
+    name?: string;
+  };
 };
 
+type ExamsListResponse = {
+  exams?: ApiExamListRow[];
+  data?: ApiExamListRow[];
+} | ApiExamListRow[];
+
 type ExamsListSimpleResponse = {
-  data: Array<{
-    id: number;
-    aso_number: number | null;
-    patient_name: string;
-    type_result_name: string;
-    status: number;
-    public: boolean;
-    created_at: string;
-  }>;
+  data?: ApiExamListRow[];
   meta?: {
     current_page: number;
     last_page: number;
@@ -23,19 +27,66 @@ type ExamsListSimpleResponse = {
   };
 };
 
+function toNumberOrNull(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeExamRow(row: ApiExamListRow, index: number): ClinicalResultListItem {
+  const id = toNumberOrNull(row.id) ?? index + 1;
+  const asoNumber = toNumberOrNull(row.aso_number);
+  const asoDate = row.aso_date ?? null;
+
+  const patientName = row.patient?.name ?? row.patient_name ?? '-';
+  const patientPhone = row.patient?.phone1 ?? row.patient_phone1 ?? null;
+  const patientEmail = row.patient?.email ?? row.patient_email ?? null;
+
+  const typeResultSource = row.clinical_type_result ?? row.clinicalTypeResult;
+  const typeResultName = typeResultSource?.name ?? row.type_result_name ?? '-';
+  const typeResultId = toNumberOrNull(typeResultSource?.id) ?? 0;
+
+  const createdAt = row.created_at ?? row.updated_at ?? new Date().toISOString();
+  const updatedAt = row.updated_at ?? row.created_at ?? createdAt;
+
+  return {
+    id,
+    aso_number: asoNumber,
+    aso_date: asoDate,
+    status: Number(row.status ?? 0),
+    public: Boolean(row.public),
+    created_at: createdAt,
+    updated_at: updatedAt,
+    patient: {
+      id: toNumberOrNull(row.patient?.id) ?? 0,
+      name: patientName,
+      phone1: patientPhone,
+      email: patientEmail,
+    },
+    clinical_type_result: {
+      id: typeResultId,
+      name: typeResultName,
+    },
+  };
+}
+
+function extractRowsFromResponse(response: ExamsListResponse): ApiExamListRow[] {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.exams)) return response.exams;
+  if (Array.isArray(response?.data)) return response.data;
+  return [];
+}
+
 export async function getAllExams(): Promise<ClinicalResultListItem[]> {
   try {
-    const { signal } = new AbortController();
+    const { data } = await api.get<ExamsListResponse>('/client/exams-list');
+    const rows = extractRowsFromResponse(data);
 
-    const { data } = await api.get<ExamsListResponse>(`/client/exams-list`, {
-      signal,
-    });
-
-    if (Array.isArray(data?.exams)) {
-      return data.exams;
+    if (rows.length > 0) {
+      return rows.map(normalizeExamRow);
     }
 
-    return [];
+    throw new Error('Contrato inválido de /client/exams-list');
   } catch {
     return getAllExamsFallbackSimple();
   }
@@ -46,45 +97,27 @@ async function getAllExamsFallbackSimple(): Promise<ClinicalResultListItem[]> {
   let page = 1;
   let hasNextPage = true;
 
-  while (hasNextPage) {
-    const { signal } = new AbortController();
+  try {
+    while (hasNextPage) {
+      const { data } = await api.get<ExamsListSimpleResponse>('/client/exams-list-simple', {
+        params: {
+          page,
+          per_page: 100,
+          sort_by: 'created_at',
+          sort_order: 'desc',
+        },
+      });
 
-    const { data } = await api.get<ExamsListSimpleResponse>(`/client/exams-list-simple`, {
-      signal,
-      params: {
-        page,
-        per_page: 100,
-        sort_by: 'created_at',
-        sort_order: 'desc',
-      },
-    });
+      const batch = (data?.data ?? []).map(normalizeExamRow);
+      items.push(...batch);
 
-    const batch = (data?.data ?? []).map((row): ClinicalResultListItem => ({
-      id: row.id,
-      aso_number: row.aso_number ?? null,
-      aso_date: null,
-      status: row.status,
-      public: Boolean(row.public),
-      created_at: row.created_at,
-      updated_at: row.created_at,
-      patient: {
-        id: 0,
-        name: row.patient_name ?? '-',
-        phone1: null,
-        email: null,
-      },
-      clinical_type_result: {
-        id: 0,
-        name: row.type_result_name ?? '-',
-      },
-    }));
-
-    items.push(...batch);
-
-    const currentPage = Number(data?.meta?.current_page ?? page);
-    const lastPage = Number(data?.meta?.last_page ?? page);
-    hasNextPage = currentPage < lastPage;
-    page += 1;
+      const currentPage = Number(data?.meta?.current_page ?? page);
+      const lastPage = Number(data?.meta?.last_page ?? page);
+      hasNextPage = currentPage < lastPage;
+      page += 1;
+    }
+  } catch {
+    return [];
   }
 
   return items;

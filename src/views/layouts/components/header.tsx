@@ -24,6 +24,7 @@ import {
   House,
   Lightning,
   ListChecks,
+  UsersThree,
   User as UserIcon,
   ShieldCheck,
   WhatsappLogo,
@@ -113,12 +114,13 @@ export function Header() {
   const navigationItems = [
     { to: "/", label: "Início", icon: House },
     { to: "/certificates", label: "Atestados", icon: ListChecks },
-    { to: "/newsroom", label: "Novidades", icon: Lightning },
+    { to: "/employees", label: "Colaboradores", icon: UsersThree },
   ];
 
   function handleSignOut() {
     signOut();
     toast.success('Sessão encerrada com sucesso.');
+    window.location.href = '/auth';
   }
 
   return (
@@ -284,6 +286,18 @@ export function Header() {
                     <div className="flex flex-col">
                       <span className="font-bold text-sm text-slate-700">Segurança</span>
                       <span className="text-[10px] text-slate-400 font-bold">Senha e acesso</span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild className="rounded-xl cursor-pointer py-3 focus:bg-slate-50 px-3 transition-colors">
+                  <Link to="/newsroom" className="flex items-center gap-3 w-full">
+                    <div className="h-8 w-8 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600">
+                      <Lightning size={18} weight="fill" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm text-slate-700">Novidades</span>
+                      <span className="text-[10px] text-slate-400 font-bold">Comunicados e atualizações</span>
                     </div>
                   </Link>
                 </DropdownMenuItem>

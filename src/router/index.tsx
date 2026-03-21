@@ -34,6 +34,11 @@ const News = lazy(() =>
     default: module.News,
   })),
 );
+const Employees = lazy(() =>
+  import('@/views/environments/client/employees/page').then((module) => ({
+    default: module.Employees,
+  })),
+);
 const DateStep = lazy(() =>
   import('@/views/environments/client/appointment/date-step').then((module) => ({
     default: module.DateStep,
@@ -131,6 +136,14 @@ export function Router() {
             element={
               <LazyElement>
                 <News />
+              </LazyElement>
+            }
+          />
+          <Route
+            path="/employees"
+            element={
+              <LazyElement>
+                <Employees />
               </LazyElement>
             }
           />

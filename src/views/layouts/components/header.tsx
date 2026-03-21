@@ -17,13 +17,13 @@ import {
   SheetTrigger,
 } from '@/views/components/ui/sheet';
 import { cn } from '@/app/utils';
-import { 
-  ArrowRight, 
-  House, 
-  Lightning, 
-  ListChecks, 
-  User as UserIcon, 
-  ShieldCheck, 
+import {
+  ArrowRight,
+  House,
+  Lightning,
+  ListChecks,
+  User as UserIcon,
+  ShieldCheck,
   WhatsappLogo,
   List,
   SignOut,
@@ -92,10 +92,9 @@ export function Header() {
               <SheetHeader className="p-6 border-b border-slate-50">
                 <SheetTitle className="text-left flex items-center gap-3">
                   <img src="/grupo-ssma.png" className="h-8 w-auto" alt="Logo" />
-                  <span className="text-lg font-black text-slate-900 tracking-tight">MedApp</span>
                 </SheetTitle>
               </SheetHeader>
-              
+
               <div className="flex flex-col gap-1 p-4">
                 <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Navegação</p>
                 {navigationItems.map((item) => (
@@ -103,12 +102,12 @@ export function Header() {
                     {item.label}
                   </NavItem>
                 ))}
-                
+
                 <div className="my-4 border-t border-slate-50" />
-                
+
                 <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ações</p>
-                <Link 
-                  to="/certificate" 
+                <Link
+                  to="/certificate"
                   className="flex items-center justify-between px-4 py-3 rounded-2xl bg-blue-50 text-blue-700 font-bold text-sm transition-all active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-2">
@@ -120,22 +119,21 @@ export function Header() {
               </div>
 
               <div className="absolute bottom-0 w-full p-4 border-t border-slate-50 bg-slate-50/50">
-                 <div className="flex items-center gap-3 px-2 py-2">
-                    <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                      {initials}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-slate-900 truncate max-w-[180px]">{profile?.name}</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Empresa #{profile?.id}</span>
-                    </div>
-                 </div>
+                <div className="flex items-center gap-3 px-2 py-2">
+                  <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                    {initials}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-900 truncate max-w-[180px]">{profile?.name}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Empresa #{profile?.id}</span>
+                  </div>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
 
           <Link to="/" className="hover:opacity-80 transition-opacity flex items-center gap-2">
             <img src="/grupo-ssma.png" className="h-10 w-auto" alt="Logo Grupo SSMA" />
-            <span className="hidden sm:inline-block text-xl font-black text-slate-900 tracking-tighter">MedApp</span>
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
@@ -194,16 +192,16 @@ export function Header() {
               <DropdownMenuLabel className="px-3 py-4">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Conta Verificada</p>
                 <div className="flex items-center gap-3">
-                   <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-blue-600 border border-slate-100">
-                      <UserIcon size={20} weight="fill" />
-                   </div>
-                   <div className="flex flex-col overflow-hidden">
-                      <p className="text-sm font-bold text-slate-900 truncate">{profile?.name || 'Usuário'}</p>
-                      <p className="text-xs text-slate-500 truncate font-medium">{profile?.email}</p>
-                   </div>
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-blue-600 border border-slate-100">
+                    <UserIcon size={20} weight="fill" />
+                  </div>
+                  <div className="flex flex-col overflow-hidden">
+                    <p className="text-sm font-bold text-slate-900 truncate">{profile?.name || 'Usuário'}</p>
+                    <p className="text-xs text-slate-500 truncate font-medium">{profile?.email}</p>
+                  </div>
                 </div>
               </DropdownMenuLabel>
-              
+
               <DropdownMenuSeparator className="my-2 bg-slate-100" />
 
               <div className="grid gap-1">

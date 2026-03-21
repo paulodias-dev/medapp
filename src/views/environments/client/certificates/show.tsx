@@ -13,6 +13,13 @@ type StatusMeta = {
   variant: 'default' | 'secondary' | 'outline';
 };
 
+function getTimelineTypeClass(type?: string): string {
+  if (type === 'success') return 'bg-emerald-500';
+  if (type === 'warning') return 'bg-amber-500';
+  if (type === 'danger') return 'bg-red-500';
+  return 'bg-blue-500';
+}
+
 function getStatusMeta(status: number): StatusMeta {
   if (status === 1) {
     return { label: 'Aprovado', variant: 'secondary' };
@@ -140,7 +147,8 @@ export function CertificateShow() {
             </div>
           ) : (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-2xl border bg-slate-50 p-4 space-y-1">
                   <p className="text-xs uppercase font-bold tracking-wider text-slate-500">ASO</p>
                   <p className="text-lg font-black text-slate-900">#{details.aso_number ?? details.id}</p>
@@ -179,6 +187,35 @@ export function CertificateShow() {
                 <div className="rounded-2xl border bg-slate-50 p-4 space-y-1">
                   <p className="text-xs uppercase font-bold tracking-wider text-slate-500">Atualizado em</p>
                   <p className="text-base font-semibold text-slate-900">{formatDate(details.updated_at, true)}</p>
+                </div>
+              </div>
+
+                <div className="rounded-2xl border bg-white p-4 sm:p-5">
+                  <h2 className="text-base font-black text-slate-900">Timeline da solicitação</h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Histórico dos eventos principais deste pedido.
+                  </p>
+
+                  <div className="mt-4 space-y-4">
+                    {(details.timeline ?? []).map((event) => (
+                      <div key={`${event.key}-${event.event_at}`} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <span className={`h-2.5 w-2.5 rounded-full ${getTimelineTypeClass(event.type)}`} />
+                          <span className="mt-1 h-full w-px bg-slate-200" />
+                        </div>
+
+                        <div className="pb-3">
+                          <p className="text-sm font-bold text-slate-900">{event.title}</p>
+                          <p className="text-xs text-slate-500">{event.description}</p>
+                          <p className="text-xs text-slate-400 mt-1">{formatDate(event.event_at, true)}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {(!details.timeline || details.timeline.length === 0) && (
+                      <p className="text-sm text-slate-500">Nenhum evento disponível para esta solicitação.</p>
+                    )}
+                  </div>
                 </div>
               </div>
 

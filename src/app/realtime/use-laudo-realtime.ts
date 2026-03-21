@@ -6,6 +6,7 @@ import { getStoredActiveTenantId } from '@/app/utils/auth-storage';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { upsertLaudoNotifications } from './laudo-notifications';
 
 import { getEchoInstance } from './echo';
 
@@ -121,6 +122,7 @@ export function useLaudoRealtime(options: UseLaudoRealtimeOptions = {}): void {
           null;
 
         if (payloads.length > 0) {
+          upsertLaudoNotifications(tenantId, payloads);
           invalidateRelatedQueries();
           emitPollingToast(payloads);
           payloads.forEach((payload) => onLaudoPronto?.(payload));
@@ -167,6 +169,7 @@ export function useLaudoRealtime(options: UseLaudoRealtimeOptions = {}): void {
     const channel = echo.private(channelName);
 
     const onLaudo = (payload: LaudoProntoPayload) => {
+      upsertLaudoNotifications(tenantId, [payload]);
       invalidateRelatedQueries();
       persistLastEventAt(lastEventStorageKey, payload.event_at ?? new Date().toISOString());
 

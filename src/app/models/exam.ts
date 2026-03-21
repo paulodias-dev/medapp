@@ -45,6 +45,16 @@ export type ClinicalResultExamItem = {
   files: ClinicalResultExamFile[];
 };
 
+export type ClinicalResultTimelineItem = {
+  key: string;
+  title: string;
+  description: string;
+  event_at: string;
+  type: 'info' | 'warning' | 'success' | 'danger' | string;
+  status?: number;
+  public?: boolean;
+};
+
 export type ClinicalResultDetail = {
   id: number;
   aso_number: number | null;
@@ -65,6 +75,7 @@ export type ClinicalResultDetail = {
     name: string;
   };
   clinicalResultExams: ClinicalResultExamItem[];
+  timeline?: ClinicalResultTimelineItem[];
   withFilesCount?: number;
   withoutFilesCount?: number;
 };

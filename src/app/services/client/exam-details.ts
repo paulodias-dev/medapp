@@ -62,6 +62,15 @@ type ApiExamDetailPayload = {
   without_files_count?: number;
   withFilesCount?: number;
   withoutFilesCount?: number;
+  timeline?: Array<{
+    key?: string;
+    title?: string;
+    description?: string;
+    event_at?: string;
+    type?: string;
+    status?: number;
+    public?: boolean;
+  }>;
 };
 
 function normalizeExamDetailResponse(
@@ -107,6 +116,15 @@ function normalizeExamDetailResponse(
     },
     clinicalTypeResult: payload.clinicalTypeResult ?? payload.clinical_type_result,
     clinicalResultExams,
+    timeline: (payload.timeline ?? []).map((item) => ({
+      key: item.key ?? 'timeline-event',
+      title: item.title ?? 'Atualização',
+      description: item.description ?? '',
+      event_at: item.event_at ?? '',
+      type: item.type ?? 'info',
+      status: item.status,
+      public: item.public,
+    })),
     withFilesCount:
       payload.withFilesCount ??
       payload.with_files_count ??

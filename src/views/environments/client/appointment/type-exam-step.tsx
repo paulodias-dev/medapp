@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const iconMap: Record<string, React.ReactNode> = {
   Admissional: <UserPlus size={24} />,
@@ -39,6 +40,7 @@ export function TypeExamStep() {
   const { data: appointmentData, setStepData } = useAppointment();
   const [selectedOption, setSelectedOption] = useState<number | null>(appointmentData.type_id);
   const [observations, setObservations] = useState(appointmentData.observations);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   const { data: types, isLoading } = useQuery({
     queryKey: ['exam-types'],
@@ -51,6 +53,18 @@ export function TypeExamStep() {
   };
 
   const handleContinue = () => {
+    setShowValidationErrors(true);
+
+    if (!selectedOption) {
+      toast.error('Selecione o tipo de exame para continuar.');
+      return;
+    }
+
+    if (observations.trim().length < 5) {
+      toast.error('Informe observações com pelo menos 5 caracteres.');
+      return;
+    }
+
     setStepData('observations', observations);
     navigate('/certificate/exam');
   };
@@ -115,10 +129,19 @@ export function TypeExamStep() {
               </Label>
               <Textarea
                 placeholder="Informe observações relevantes..."
-                className="w-full min-h-[150px] rounded-xl"
+                className={`w-full min-h-[150px] rounded-xl ${
+                  showValidationErrors && observations.trim().length < 5
+                    ? 'border-red-500 focus-visible:ring-red-500'
+                    : ''
+                }`}
                 value={observations}
                 onChange={(e) => setObservations(e.target.value)}
               />
+              {showValidationErrors && observations.trim().length < 5 && (
+                <p className="text-xs font-medium text-red-600">
+                  Informe observações com pelo menos 5 caracteres.
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:justify-end border-t border-slate-100 pt-5 mt-2">

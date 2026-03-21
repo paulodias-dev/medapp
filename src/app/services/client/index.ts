@@ -10,7 +10,7 @@ import { forgotPassword } from './forgot-password';
 import { logout } from './logout';
 import * as masterData from './master-data';
 import * as appointment from './appointment';
-import { getPatientsList } from './patients-list';
+import { getPatientByCpf, getPatientsList } from './patients-list';
 import * as realtime from './realtime';
 import { resetPassword } from './reset-password';
 import * as tenant from './tenant';
@@ -27,6 +27,7 @@ export const clientService = {
   verifyToken,
   getAllExams,
   getPatientsList,
+  getPatientByCpf,
   getExamById,
   getExamFileViewerUrl,
   getExamFileDownloadUrl,

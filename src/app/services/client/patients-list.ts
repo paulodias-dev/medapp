@@ -1,6 +1,10 @@
 import { ClientPatientListItem, ClientPatientsListResponse } from '@/app/models';
 import { api } from '..';
 
+function digitsOnly(value: string | null | undefined): string {
+  return (value ?? '').replace(/\D/g, '');
+}
+
 export async function getPatientsList(
   params?: { search?: string; per_page?: number },
 ): Promise<ClientPatientListItem[]> {
@@ -12,4 +16,21 @@ export async function getPatientsList(
   });
 
   return data?.patients ?? [];
+}
+
+export async function getPatientByCpf(cpf: string): Promise<ClientPatientListItem | null> {
+  const normalizedCpf = digitsOnly(cpf);
+  if (normalizedCpf.length !== 11) {
+    return null;
+  }
+
+  const patients = await getPatientsList({
+    search: normalizedCpf,
+    per_page: 200,
+  });
+
+  return (
+    patients.find((patient) => digitsOnly(patient.cpf) === normalizedCpf) ??
+    null
+  );
 }

@@ -3,7 +3,9 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 interface AppointmentData {
   date: string | null;
   time: string | null;
+  patientId: number | null;
   employee: {
+    name: string;
     cpf: string;
     rg: string;
     birthDate: string;
@@ -29,7 +31,9 @@ interface AppointmentContextType {
 const initialData: AppointmentData = {
   date: null,
   time: null,
+  patientId: null,
   employee: {
+    name: '',
     cpf: '',
     rg: '',
     birthDate: '',

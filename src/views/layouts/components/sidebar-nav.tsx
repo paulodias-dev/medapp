@@ -1,5 +1,4 @@
 import { cn } from '@/app/utils';
-import { buttonVariants } from '@/views/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/views/components/ui/select';
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
@@ -26,15 +25,15 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
     <>
       <div className="p-1 md:hidden">
         <Select value={val} onValueChange={handleSelect}>
-          <SelectTrigger className="h-12 sm:w-48">
-            <SelectValue placeholder="Theme" />
+          <SelectTrigger className="h-12 rounded-xl border-slate-200">
+            <SelectValue placeholder="Selecione" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl">
             {items.map((item) => (
               <SelectItem key={item.href} value={item.href}>
-                <div className="flex gap-x-4 px-2 py-1">
-                  <span className="scale-125">{item.icon}</span>
-                  <span className="text-md">{item.title}</span>
+                <div className="flex items-center gap-3 px-1 py-0.5">
+                  <span>{item.icon}</span>
+                  <span className="text-sm font-semibold">{item.title}</span>
                 </div>
               </SelectItem>
             ))}
@@ -42,10 +41,10 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
         </Select>
       </div>
 
-      <div className="hidden w-full overflow-x-auto bg-background px-1 py-2 md:block">
+      <div className="hidden w-full bg-background px-1 py-2 md:block">
         <nav
           className={cn(
-            'flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1',
+            'flex flex-col gap-1',
             className,
           )}
           {...props}>
@@ -53,14 +52,15 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
             <NavLink
               key={item.href}
               to={item.href}
-              className={cn(
-                buttonVariants({ variant: 'ghost' }),
-                pathname === item.href
-                  ? 'bg-gray-100 hover:bg-gray-100'
-                  : 'hover:bg-transparent hover:underline',
-                'justify-start aria-[current=page]:bg-gray-100 transition-all duration-300 transform active:scale-95',
-              )}>
-              <span className="mr-2">{item.icon}</span>
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200',
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98]',
+                )
+              }>
+              <span>{item.icon}</span>
               {item.title}
             </NavLink>
           ))}

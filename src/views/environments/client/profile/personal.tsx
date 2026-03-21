@@ -31,7 +31,7 @@ import {
   ArrowRight
 } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { UseFormReturn, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import * as z from 'zod';
@@ -170,7 +170,7 @@ export function Personal() {
     submit.mutate(values);
   }
 
-  useEffect(() => {
+  const loadProfile = useCallback(() => {
     clientService
       .verifyToken()
       .then((res) => {
@@ -181,7 +181,11 @@ export function Personal() {
         toast.error('Não foi possível carregar os dados do perfil.');
         setLoading(false);
       });
-  }, []);
+  }, [form]);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
 
   useEffect(
     () => () => {
@@ -234,7 +238,7 @@ export function Personal() {
       form.setValue('state', dataResponse.uf, { shouldDirty: true });
 
       form.setFocus('number');
-    } catch (error) {
+    } catch {
       toast.error('Erro ao buscar o CEP.');
     }
   }

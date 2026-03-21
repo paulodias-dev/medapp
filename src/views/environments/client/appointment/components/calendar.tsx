@@ -7,8 +7,10 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  isBefore,
   isSameDay,
   isSameMonth,
+  startOfDay,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -20,7 +22,8 @@ interface CalendarProps {
 }
 
 export function Calendar({ onDateSelect }: CalendarProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const today = startOfDay(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [activeDate, setActiveDate] = useState<Date>(new Date());
 
   const handleDateSelect = (date: Date) => {
@@ -52,16 +55,23 @@ export function Calendar({ onDateSelect }: CalendarProps) {
     while (currentDate <= endDate) {
       const week = Array.from({ length: 7 }, () => {
         const date = currentDate;
+        const isPastDate = isBefore(startOfDay(date), today);
+        const isSelectedDate = isSameDay(date, selectedDate);
+        const isToday = isSameDay(date, today);
         currentDate = addDays(currentDate, 1);
+
         return (
           <div
             key={date.toString()}
-            className={`w-10 h-10 cursor-pointer flex justify-center items-center m-auto rounded-xl ${
-              isSameMonth(date, activeDate) ? '' : 'text-gray-500'
-            } ${isSameDay(date, selectedDate) ? 'bg-primary text-white' : ''} ${
-              isSameDay(date, new Date()) ? 'bg-gray-200' : ''
-            }`}
-            onClick={() => handleDateSelect(date)}>
+            className={`w-10 h-10 flex justify-center items-center m-auto rounded-xl transition-colors ${
+              isSameMonth(date, activeDate) ? '' : 'text-gray-400'
+            } ${isPastDate ? 'cursor-not-allowed opacity-40' : 'cursor-pointer hover:bg-gray-100'} ${
+              isToday && !isSelectedDate ? 'ring-1 ring-blue-200' : ''
+            } ${isSelectedDate ? 'bg-primary text-white hover:bg-primary' : ''}`}
+            onClick={() => {
+              if (isPastDate) return;
+              handleDateSelect(date);
+            }}>
             {format(date, 'd')}
           </div>
         );

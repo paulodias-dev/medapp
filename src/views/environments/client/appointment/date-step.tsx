@@ -5,7 +5,7 @@ import { Newspaper } from '@phosphor-icons/react';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, isBefore, startOfDay } from 'date-fns';
 
 import { Calendar } from './components/calendar';
 
@@ -14,9 +14,14 @@ import { useAppointment } from '@/app/context/appointment-context';
 export function DateStep() {
   const navigate = useNavigate();
   const { data: appointmentData, setStepData } = useAppointment();
+  const today = startOfDay(new Date());
+  const initialDate =
+    appointmentData.date && !isBefore(startOfDay(new Date(appointmentData.date)), today)
+      ? new Date(appointmentData.date)
+      : null;
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(
-    appointmentData.date ? new Date(appointmentData.date) : null
+    initialDate
   );
   const [selectedTime, setSelectedTime] = useState<string | null>(appointmentData.time);
 
@@ -34,6 +39,10 @@ export function DateStep() {
   };
 
   const handleDateSelect = (date: Date) => {
+    if (isBefore(startOfDay(date), today)) {
+      return;
+    }
+
     setSelectedDate(date);
     setSelectedTime(null);
     setStepData('date', format(date, 'yyyy-MM-dd'));
@@ -49,110 +58,116 @@ export function DateStep() {
     .map((s: any) => s.time);
 
   return (
-    <>
-      <hr className="border-b-[10px] border-[#f5f5f5]" />
-
-      <div className="animate-slidein600 opacity-0 container max-w-[1024px] flex-auto flex flex-col py-6">
-        <div className="flex items-center gap-2">
-          <button className="bg-primary text-white rounded-xl flex items-center justify-center gap-2 px-4 py-2">
-            <p className="font-normal">1/5</p>
-          </button>
-
-          <Button
-            variant="outline"
-            className="rounded-xl flex items-center justify-center gap-2">
-            <p className="font-normal">Contrato</p>
-            <Newspaper size={20} />
-          </Button>
-        </div>
-
-        <div className="flex gap-8 flex-auto mt-4">
-          <div className="w-full">
-            <h1 className="text-2xl mb-2 font-medium">Horários disponíveis</h1>
-            <p className="font-light text-slate-400">
+    <div className="min-h-screen bg-slate-50/50 pb-16">
+      <div className="bg-white border-b border-slate-100 sticky top-20 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+              Etapa 1 de 4
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Data e horário
+            </h1>
+            <p className="text-sm text-slate-500 font-medium">
               {selectedDate
-                ? `${selectedDate.toLocaleDateString('pt-BR', {
+                ? selectedDate.toLocaleDateString('pt-BR', {
                     weekday: 'long',
                     day: '2-digit',
                     month: '2-digit',
-                  })}`
-                : 'Selecione uma data no calendário'}
+                  })
+                : 'Selecione uma data no calendário para carregar horários disponíveis.'}
+            </p>
+          </div>
+
+          <Button
+            variant="outline"
+            className="rounded-xl flex items-center justify-center gap-2 w-full md:w-auto">
+            Contrato
+            <Newspaper size={18} />
+          </Button>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
+          <section className="rounded-3xl border border-slate-100 bg-white shadow-sm p-5 sm:p-6">
+            <h2 className="text-lg font-black text-slate-900">Horários disponíveis</h2>
+            <p className="mt-1 text-sm text-slate-500 font-medium">
+              Escolha o melhor período para o atendimento.
             </p>
 
             {isLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="animate-spin text-primary" size={40} />
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="animate-spin text-primary" size={36} />
               </div>
             ) : selectedDate ? (
-              <div>
+              <div className="mt-6 space-y-6">
                 {morningHours.length > 0 && (
-                  <>
-                    <h2 className="text-lg py-2 border-b font-semibold">Manhã</h2>
-                    <div className="grid grid-cols-4 gap-2 mt-2">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-slate-600 border-b border-slate-100 pb-2">
+                      Manhã
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
                       {morningHours.map((time: string) => (
                         <Button
                           key={time}
                           variant={selectedTime === time ? 'default' : 'outline'}
-                          className="text-sm"
+                          className="text-sm rounded-xl"
                           onClick={() => handleTimeSelect(time)}>
                           {time}
                         </Button>
                       ))}
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {afternoonHours.length > 0 && (
-                  <>
-                    <h2 className="text-lg py-2 border-b font-semibold mt-4">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-slate-600 border-b border-slate-100 pb-2">
                       Tarde
-                    </h2>
-                    <div className="grid grid-cols-4 gap-2 mt-2">
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
                       {afternoonHours.map((time: string) => (
                         <Button
                           key={time}
                           variant={selectedTime === time ? 'default' : 'outline'}
-                          className="text-sm"
+                          className="text-sm rounded-xl"
                           onClick={() => handleTimeSelect(time)}>
                           {time}
                         </Button>
                       ))}
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {scheduleList.length === 0 && (
-                  <p className="text-center text-gray-400 py-10">Nenhum horário disponível para esta data.</p>
+                  <p className="text-center text-slate-400 py-10">
+                    Nenhum horário disponível para esta data.
+                  </p>
                 )}
               </div>
             ) : (
-              <div className="flex items-center justify-center py-10">
-                <p className="text-gray-400">Aguardando seleção de data...</p>
+              <div className="flex items-center justify-center py-12">
+                <p className="text-slate-400">Aguardando seleção de data...</p>
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="w-full max-w-[400px] flex flex-col gap-6">
-            <Calendar
-              onDateSelect={handleDateSelect}
-            />
+          <aside className="rounded-3xl border border-slate-100 bg-white shadow-sm p-5 sm:p-6 flex flex-col gap-5 h-fit xl:sticky xl:top-24">
+            <Calendar onDateSelect={handleDateSelect} />
 
-            <div className="text-center">
-              <p className="font-light text-slate-400">
-                {selectedTime
-                  ? `Você selecionou: ${selectedDate?.toLocaleDateString(
-                      'pt-BR',
-                    )} às ${selectedTime}`
-                  : 'Selecione um horário disponível'}
-              </p>
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600 font-medium">
+              {selectedTime
+                ? `Selecionado: ${selectedDate?.toLocaleDateString('pt-BR')} às ${selectedTime}`
+                : 'Selecione um horário disponível para continuar.'}
             </div>
 
-            <div className="flex gap-2 mt-auto">
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
               <Button
                 type="button"
                 onClick={() => navigate(-1)}
                 variant="ghost"
-                className="w-fit rounded-xl flex items-center justify-between gap-1 ml-auto">
+                className="rounded-xl">
                 Voltar
               </Button>
 
@@ -160,14 +175,14 @@ export function DateStep() {
                 type="button"
                 disabled={!selectedDate || !selectedTime}
                 onClick={() => navigate('/certificate/employee')}
-                className="w-fit rounded-xl flex items-center justify-between gap-1">
+                className="rounded-xl gap-1">
                 Continuar
                 <ArrowUpRight className="w-4" />
               </Button>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
-    </>
+    </div>
   );
 }

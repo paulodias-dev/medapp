@@ -84,7 +84,7 @@ export function Security() {
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8 max-w-4xl">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8 w-full">
       <header className="relative overflow-hidden rounded-[2rem] border bg-white p-8 shadow-sm">
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-50" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">

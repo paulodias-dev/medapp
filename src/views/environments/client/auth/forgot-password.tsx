@@ -102,9 +102,9 @@ export function ForgotPassword() {
   }
 
   return (
-    <div className="flex h-screen">
-      <div className="container relative flex flex-col items-center justify-center gap-8 lg:w-2/5">
-        <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-slate-50/50 flex">
+      <div className="relative flex w-full flex-col items-center justify-center gap-8 px-4 sm:px-6 py-8 lg:w-2/5">
+        <div className="w-full max-w-md">
           <div className="flex flex-col items-center gap-20">
             <img
               src="/grupo-ssma.png"
@@ -176,13 +176,13 @@ export function ForgotPassword() {
         role="none"
       />
 
-      <div className="animate-slidein600 opacity-0 items-center justify-center flex-col hidden w-3/5 lg:flex">
+      <div className="animate-slidein600 opacity-0 items-center justify-center flex-col hidden w-3/5 lg:flex px-6">
         <div className="h-4 w-[60%] bg-[#cdecff] rounded-t-xl blur-md" />
         <div className="h-8 w-[80%] backdrop-blur-sm bg-[#cdecff] rounded-t-xl blur-sm" />
         <img
           src="/bg-forgot-password.png"
           alt=""
-          className="container"
+          className="w-full max-w-3xl"
         />
       </div>
     </div>

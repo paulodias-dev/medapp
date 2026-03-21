@@ -41,7 +41,7 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
         </Select>
       </div>
 
-      <div className="hidden w-full bg-background px-1 py-2 md:block">
+      <div className="hidden w-full rounded-2xl border border-slate-100 bg-white p-2 shadow-sm md:block">
         <nav
           className={cn(
             'flex flex-col gap-1',

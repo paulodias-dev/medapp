@@ -56,60 +56,54 @@ export function TypeExamStep() {
   };
 
   return (
-    <>
-      <hr className="border-b-[10px] border-[#f5f5f5]" />
-
-      <div className="animate-slidein600 opacity-0 container max-w-[1024px] flex-auto flex flex-col py-6">
-        <div className="flex items-center gap-2">
-          <button className="bg-primary text-white rounded-xl flex items-center justify-center gap-2 px-4 py-2">
-            <p className="font-normal">4/5</p>
-          </button>
-
-          <Button
-            variant="outline"
-            className="rounded-xl flex items-center justify-center gap-2">
-            <p className="font-normal">Contrato</p>
-            <Newspaper size={20} />
-          </Button>
-        </div>
-
-        <div className="flex gap-8 flex-auto mt-4">
-          <div className=" w-full max-w-[400px]">
-            <h1 className="text-2xl mb-2 font-medium">Tipo de Exame</h1>
-
-            <p className="font-light text-slate-400">
-              Selecione o tipo de exame que será realizado para continuar o
-              processo.
+    <div className="min-h-screen bg-slate-50/50 pb-16">
+      <div className="bg-white border-b border-slate-100 sticky top-20 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+              Etapa 3 de 4
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Tipo de exame
+            </h1>
+            <p className="text-sm text-slate-500 font-medium">
+              Selecione o tipo de exame ocupacional para esta solicitação.
             </p>
           </div>
 
-          <form action="" className="w-full flex flex-col gap-6">
+          <Button
+            variant="outline"
+            className="rounded-xl flex items-center justify-center gap-2 w-full md:w-auto">
+            Contrato
+            <Newspaper size={18} />
+          </Button>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+        <section className="rounded-3xl border border-slate-100 bg-white shadow-sm p-5 sm:p-6">
+          <form className="w-full flex flex-col gap-6">
             {isLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="animate-spin text-primary" size={40} />
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="animate-spin text-primary" size={36} />
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {(types || []).map((item: any) => (
-                  <div
+                  <button
+                    type="button"
                     key={item.id}
-                    className={`p-2 h-[90px] ${
-                      item.name.length > 20 && 'col-span-2'
-                    } border-2 rounded-xl cursor-pointer transition-colors ${
+                    className={`h-full rounded-2xl border-2 p-3 text-left transition-colors ${
                       selectedOption === item.id
                         ? 'border-primary bg-primary/5'
-                        : 'border-gray-100'
+                        : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
                     }`}
                     onClick={() => handleSelect(item.id)}>
-                    <button
-                      type="button"
-                      className="w-full h-full flex flex-col justify-center gap-2">
+                    <div className="flex h-full flex-col justify-center gap-2">
                       {iconMap[item.name] || <FileText size={24} />}
-                      <p className="max-w-[150px] font-normal text-sm text-start leading-tight">
-                        {item.name}
-                      </p>
-                    </button>
-                  </div>
+                      <p className="font-medium text-sm leading-tight">{item.name}</p>
+                    </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -127,12 +121,12 @@ export function TypeExamStep() {
               />
             </div>
 
-            <div className="flex gap-2 mt-auto">
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end border-t border-slate-100 pt-5 mt-2">
               <Button
                 type="button"
                 onClick={() => navigate(-1)}
                 variant="ghost"
-                className="w-fit rounded-xl flex items-center justify-between gap-1 ml-auto">
+                className="rounded-xl">
                 Voltar
               </Button>
 
@@ -140,14 +134,14 @@ export function TypeExamStep() {
                 type="button"
                 onClick={handleContinue}
                 disabled={!selectedOption}
-                className="w-fit rounded-xl flex items-center justify-between gap-1">
+                className="rounded-xl gap-1">
                 Continuar
                 <ArrowUpRight className="w-4" />
               </Button>
             </div>
           </form>
-        </div>
+        </section>
       </div>
-    </>
+    </div>
   );
 }

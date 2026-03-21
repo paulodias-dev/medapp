@@ -38,43 +38,41 @@ export function ExamStep() {
   };
 
   return (
-    <>
-      <hr className="border-b-[10px] border-[#f5f5f5]" />
-
-      <div className="animate-slidein600 opacity-0 container max-w-[1024px] flex-auto flex flex-col py-6">
-        <div className="flex items-center gap-2">
-          <button className="bg-primary text-white rounded-xl flex items-center justify-center gap-2 px-4 py-2">
-            <p className="font-normal">5/5</p>
-          </button>
-
-          <Button
-            variant="outline"
-            className="rounded-xl flex items-center justify-center gap-2">
-            <p className="font-normal">Contrato</p>
-            <Newspaper size={20} />
-          </Button>
-        </div>
-
-        <div className="flex gap-8 flex-auto mt-4">
-          <div className="w-full max-w-[400px]">
-            <h1 className="text-2xl mb-2 font-medium">Exames do Contrato</h1>
-
-            <p className="font-light text-slate-400">
-              Selecione os exames que farão parte deste contrato/agendamento.
+    <div className="min-h-screen bg-slate-50/50 pb-16">
+      <div className="bg-white border-b border-slate-100 sticky top-20 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+              Etapa 4 de 4
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Exames do contrato
+            </h1>
+            <p className="text-sm text-slate-500 font-medium">
+              Selecione os exames que farão parte deste encaminhamento.
             </p>
           </div>
 
-          <div className="w-full flex flex-col gap-6">
-            <ExamList
-              initialSelected={appointmentData.exams}
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-              onBack={() => navigate(-1)}
-            />
-          </div>
+          <Button
+            variant="outline"
+            className="rounded-xl flex items-center justify-center gap-2 w-full md:w-auto">
+            Contrato
+            <Newspaper size={18} />
+          </Button>
         </div>
       </div>
-    </>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+        <section className="rounded-3xl border border-slate-100 bg-white shadow-sm p-5 sm:p-6">
+          <ExamList
+            initialSelected={appointmentData.exams}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            onBack={() => navigate(-1)}
+          />
+        </section>
+      </div>
+    </div>
   );
 }
 
@@ -114,7 +112,7 @@ function ExamList({ initialSelected, onSubmit, isSubmitting, onBack }: ExamListP
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="mb-2">
+      <div className="mb-1">
         <Input
           type="text"
           placeholder="Pesquisar exames..."
@@ -124,15 +122,15 @@ function ExamList({ initialSelected, onSubmit, isSubmitting, onBack }: ExamListP
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[400px]">
+      <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[420px] rounded-2xl border border-slate-100 p-3 sm:p-4">
         {filteredExams.map((exam: any) => (
           <div
             key={exam.id}
             onClick={() => handleCheckboxChange(String(exam.id))}
-            className={`border rounded-xl px-4 py-2 flex items-center justify-between transition-colors cursor-pointer ${
+            className={`border rounded-xl px-4 py-3 flex items-center justify-between transition-colors cursor-pointer ${
               selectedExams.includes(String(exam.id))
                 ? 'border-primary bg-primary/5'
-                : ''
+                : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
             }`}>
             <div className="flex flex-col justify-center">
               <p className="font-normal">{exam.name}</p>
@@ -157,12 +155,12 @@ function ExamList({ initialSelected, onSubmit, isSubmitting, onBack }: ExamListP
         )}
       </div>
 
-      <div className="flex gap-2 mt-auto">
+      <div className="flex flex-col sm:flex-row gap-2 sm:justify-end border-t border-slate-100 pt-5 mt-1">
         <Button
           type="button"
           onClick={onBack}
           variant="ghost"
-          className="w-fit rounded-xl flex items-center justify-between gap-1 ml-auto">
+          className="rounded-xl">
           Voltar
         </Button>
 
@@ -170,7 +168,7 @@ function ExamList({ initialSelected, onSubmit, isSubmitting, onBack }: ExamListP
           type="button"
           onClick={() => onSubmit(selectedExams)}
           disabled={selectedExams.length === 0 || isSubmitting}
-          className="w-fit rounded-xl flex items-center justify-between gap-1">
+          className="rounded-xl gap-1">
           {isSubmitting ? (
             <>
               <Loader2 className="animate-spin w-4 h-4 mr-1" />

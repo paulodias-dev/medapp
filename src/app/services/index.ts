@@ -8,6 +8,7 @@ export const api = axios.create({
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
+  _tenantRetry?: boolean;
 };
 
 let isRefreshing = false;
@@ -21,6 +22,25 @@ function clearAuthAndRedirect() {
   localStorage.removeItem(localStorageKeys.USER_DATA);
   localStorage.removeItem(localStorageKeys.ACTIVE_TENANT_ID);
   window.location.href = '/auth';
+}
+
+function getStoredUserId(): number | null {
+  const rawUser = localStorage.getItem(localStorageKeys.USER_DATA);
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawUser) as { id?: unknown };
+    const userId = Number(parsed?.id);
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return null;
+    }
+
+    return userId;
+  } catch {
+    return null;
+  }
 }
 
 function processQueue(error: unknown, token: string | null = null) {
@@ -69,12 +89,16 @@ async function refreshToken(): Promise<string> {
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
   const activeTenantId = localStorage.getItem(localStorageKeys.ACTIVE_TENANT_ID);
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
   if (activeTenantId) {
-    config.headers['X-Tenant-ID'] = activeTenantId;
+    const normalizedTenantId = Number(activeTenantId);
+    if (Number.isFinite(normalizedTenantId) && normalizedTenantId > 0) {
+      config.headers['X-Tenant-ID'] = String(normalizedTenantId);
+    }
   }
 
   return config;
@@ -132,6 +156,26 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401) {
       clearAuthAndRedirect();
+    }
+
+    const responseData = error.response?.data as
+      | { error?: string; message?: string }
+      | undefined;
+    const tenantErrorText = `${responseData?.error ?? ''} ${responseData?.message ?? ''}`.toLowerCase();
+    const isTenantError = error.response?.status === 403 && tenantErrorText.includes('tenant');
+
+    if (isTenantError && originalRequest && !originalRequest._tenantRetry) {
+      const userId = getStoredUserId();
+      if (!userId) {
+        clearAuthAndRedirect();
+        return Promise.reject(error);
+      }
+
+      localStorage.setItem(localStorageKeys.ACTIVE_TENANT_ID, String(userId));
+      originalRequest._tenantRetry = true;
+      originalRequest.headers = originalRequest.headers ?? {};
+      originalRequest.headers['X-Tenant-ID'] = String(userId);
+      return api(originalRequest);
     }
 
     return Promise.reject(error);

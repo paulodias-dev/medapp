@@ -4,10 +4,9 @@ import { phoneMask } from '@/app/utils';
 import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
 import { Manage } from '@/views/environments/client/certificates/manage';
-import { Check, Copy } from '@phosphor-icons/react';
+import { Copy } from '@phosphor-icons/react';
 import { CaretSortIcon } from '@radix-ui/react-icons';
 import { ColumnDef } from '@tanstack/react-table';
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -23,6 +22,9 @@ function getStatusMeta(status: number) {
   return { label: 'Reprovado', variant: 'default' as const };
 }
 
+const sortableHeaderClass =
+  'h-8 px-2 -ml-2 justify-start font-semibold text-slate-600 hover:bg-slate-100';
+
 export const columns: ColumnDef<WarningExamResponse>[] = [
   {
     accessorFn: (row) => row.aso_number ?? row.id,
@@ -31,7 +33,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           ASO
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -40,7 +42,29 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
     },
     cell: ({ row }) => {
       const asoValue = String(row.getValue('aso'));
-      return <AsoNumberCell asoValue={asoValue} />;
+
+      async function handleCopyToClipBoard(id: string) {
+        try {
+          await navigator.clipboard.writeText(id);
+          toast.success(`ASO ${id} copiado!`);
+        } catch {
+          toast.error('Falha ao copiar o ID. Tente novamente.');
+        }
+      }
+
+      return (
+        <div className="group flex items-center gap-2 font-medium">
+          {asoValue}
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+            onClick={() => handleCopyToClipBoard(asoValue)}>
+            <Copy className="h-3 w-3" />
+            <span className="sr-only">Copiar ASO</span>
+          </Button>
+        </div>
+      );
     },
   },
   {
@@ -50,7 +74,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Nome
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -58,7 +82,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.patient?.name ?? '-'}</div>;
+      return <div>{row.original.patient?.name ?? '-'}</div>;
     },
   },
   {
@@ -68,7 +92,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Telefone
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -77,7 +101,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
     },
     cell: ({ row }) => {
       const phone = row.original.patient?.phone1 ?? '';
-      return <div className="px-3">{phone ? phoneMask(phone) : '-'}</div>;
+      return <div>{phone ? phoneMask(phone) : '-'}</div>;
     },
   },
   {
@@ -87,7 +111,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Email
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -95,7 +119,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.patient?.email ?? '-'}</div>;
+      return <div>{row.original.patient?.email ?? '-'}</div>;
     },
   },
   {
@@ -105,7 +129,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Vencimento
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -113,7 +137,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{formatDatePtBr(row.original.expires_at)}</div>;
+      return <div>{formatDatePtBr(row.original.expires_at)}</div>;
     },
   },
   {
@@ -123,7 +147,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Dias em atraso
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -132,7 +156,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
     },
     cell: ({ row }) => {
       const days = row.original.days_overdue ?? 0;
-      return <div className="px-3 font-medium">{days}</div>;
+      return <div className="font-medium">{days}</div>;
     },
   },
   {
@@ -141,7 +165,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Status
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -189,41 +213,6 @@ function formatDatePtBr(value?: string | null): string {
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
   }).format(parsed);
-}
-
-function AsoNumberCell({ asoValue }: { asoValue: string }) {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  async function handleCopyToClipBoard(id: string) {
-    try {
-      await navigator.clipboard.writeText(id);
-      toast.success(`ASO ${id} copiado!`);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch {
-      toast.error('Falha ao copiar o ID. Tente novamente.');
-    }
-  }
-
-  return (
-    <div className="group flex items-center gap-2 font-medium">
-      {asoValue}
-      <Button
-        size="icon"
-        variant="outline"
-        className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-        onClick={() => handleCopyToClipBoard(asoValue)}>
-        {copiedId === asoValue ? (
-          <Check className="h-3 w-3 text-green-500" />
-        ) : (
-          <Copy className="h-3 w-3" />
-        )}
-        <span className="sr-only">
-          {copiedId === asoValue ? 'Copiado!' : 'Copiar ASO'}
-        </span>
-      </Button>
-    </div>
-  );
 }
 
 function toClinicalResultListItem(exam: WarningExamResponse): ClinicalResultListItem {

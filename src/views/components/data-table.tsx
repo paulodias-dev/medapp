@@ -27,7 +27,7 @@ export function DataTable<TData, TValue>({
   table,
 }: DataTableProps<TData, TValue>) {
   return (
-    <div className="animate-slidein400 opacity-0 px-4 py-8 flex flex-col gap-2">
+    <div className="animate-slidein400 opacity-0 px-4 sm:px-6 py-5 flex flex-col gap-2">
       <div className="rounded-md dark:border-zinc-700 text-slate-900 dark:text-slate-200">
         <Table>
           <TableHeader>

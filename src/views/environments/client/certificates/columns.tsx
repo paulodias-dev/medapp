@@ -18,6 +18,9 @@ function getStatusMeta(status: number) {
   return { label: 'Reprovado', variant: 'default' as const };
 }
 
+const sortableHeaderClass =
+  'h-8 px-2 -ml-2 justify-start font-semibold text-slate-600 hover:bg-slate-100';
+
 export const columns: ColumnDef<ClinicalResultListItem>[] = [
   {
     accessorKey: 'aso_number',
@@ -25,7 +28,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           ASO
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -33,7 +36,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.aso_number ?? row.original.id}</div>;
+      return <div>{row.original.aso_number ?? row.original.id}</div>;
     },
   },
   {
@@ -43,7 +46,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Nome
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -51,7 +54,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.patient?.name ?? '-'}</div>;
+      return <div>{row.original.patient?.name ?? '-'}</div>;
     },
   },
   {
@@ -61,7 +64,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Telefone
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -69,7 +72,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.patient?.phone1 ?? '-'}</div>;
+      return <div>{row.original.patient?.phone1 ?? '-'}</div>;
     },
   },
   {
@@ -79,7 +82,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Email
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -87,7 +90,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.patient?.email ?? '-'}</div>;
+      return <div>{row.original.patient?.email ?? '-'}</div>;
     },
   },
   {
@@ -97,7 +100,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Tipo
           <CaretSortIcon className="ml-2 h-4 w-4" />
@@ -105,7 +108,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div className="px-3">{row.original.clinical_type_result?.name ?? '-'}</div>;
+      return <div>{row.original.clinical_type_result?.name ?? '-'}</div>;
     },
   },
   {
@@ -114,7 +117,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       return (
         <Button
           variant="ghost"
-          className="center"
+          className={sortableHeaderClass}
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
           Status
           <CaretSortIcon className="ml-2 h-4 w-4" />

@@ -1,3 +1,4 @@
+import { useAuth } from '@/app/context/use-auth';
 import { dashboardService } from '@/app/services/dashboard';
 import { DataTable } from '@/views/components/data-table';
 import { Button } from '@/views/components/ui/button';
@@ -28,14 +29,16 @@ import { columns } from './columns';
 import { AsoCompliance, AsoFindDialog } from './components';
 
 export function Dashboard() {
+  const { user } = useAuth();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const {
     data: warningExams,
     isLoading: warningExamsLoading,
     isError: warningExamsError,
+    refetch: refetchWarningExams,
   } = useQuery({
-    queryKey: ['warningExams'],
+    queryKey: ['warningExams', user?.id ?? 'anonymous'],
     queryFn: dashboardService.warningExams,
     retry: false,
   });
@@ -44,8 +47,9 @@ export function Dashboard() {
     data: sumaryExams,
     isLoading: summaryLoading,
     isError: summaryError,
+    refetch: refetchSummary,
   } = useQuery({
-    queryKey: ['sumaryExams'],
+    queryKey: ['sumaryExams', user?.id ?? 'anonymous'],
     queryFn: dashboardService.sumaryExams,
     retry: false,
   });
@@ -80,32 +84,38 @@ export function Dashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      {/* Page header */}
-      <div className="border-b border-slate-100 bg-white px-4 sm:px-6">
-        <div className="mx-auto max-w-7xl py-6">
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            Início
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 font-medium capitalize">
-            {dateLabel}
-          </p>
+    <div className="min-h-screen bg-slate-50/50 pb-16">
+      <div className="bg-white border-b border-slate-100 sticky top-20 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Início
+            </h1>
+            <p className="text-slate-500 font-medium flex items-center gap-2 text-sm capitalize">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              {dateLabel}
+            </p>
+          </div>
+
+          <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 shadow-sm">
+            {warningAsos} ASOs vencidos para revisão
+          </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
-
-        {/* Stats & Search Row */}
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6">
-          <Card className="sm:col-span-2 flex flex-col justify-center border-slate-100 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-black text-slate-900">Pesquisa global por ASO's</CardTitle>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          <Card className="md:col-span-2 xl:col-span-2 flex h-full flex-col justify-center border-slate-100 shadow-sm rounded-3xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-black text-slate-900">
+                Pesquisa global por ASO&apos;s
+              </CardTitle>
               <CardDescription className="max-w-lg text-balance leading-relaxed text-slate-500">
-                Pesquise por ASO's de colaboradores da sua empresa.
+                Pesquise rapidamente por ASO&apos;s de colaboradores da sua
+                empresa.
               </CardDescription>
             </CardHeader>
-            <CardFooter>
+            <CardFooter className="pt-0">
               <AsoFindDialog />
             </CardFooter>
           </Card>
@@ -120,9 +130,8 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Warning Exams Section */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <section className="rounded-3xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-b border-slate-100 px-4 sm:px-6 py-5">
             <div>
               <h2 className="text-lg font-black text-slate-900">ASOs vencidos</h2>
               <p className="text-sm text-slate-500 font-medium">
@@ -130,9 +139,9 @@ export function Dashboard() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-full lg:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Input
-                className="max-w-64 h-10 rounded-xl border-slate-200 text-sm"
+                className="h-10 w-full sm:w-72 rounded-xl border-slate-200 text-sm"
                 placeholder="Pesquisar por colaborador..."
                 onChange={(event) =>
                   table.getColumn('nome')?.setFilterValue(event.target.value)
@@ -148,11 +157,34 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-            <DataTable table={table} columns={columns} />
-          </div>
-        </div>
+          {warningExamsLoading && (
+            <div className="px-6 py-12 text-sm text-slate-400 text-center">
+              Carregando ASOs vencidos...
+            </div>
+          )}
 
+          {warningExamsError && (
+            <div className="px-6 py-12 text-center space-y-3">
+              <p className="text-sm text-red-500">
+                Não foi possível carregar o monitoramento de ASOs vencidos.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+                onClick={() => {
+                  void refetchWarningExams();
+                  void refetchSummary();
+                }}>
+                Tentar novamente
+              </Button>
+            </div>
+          )}
+
+          {!warningExamsLoading && !warningExamsError && (
+            <DataTable table={table} columns={columns} />
+          )}
+        </section>
       </div>
     </div>
   );

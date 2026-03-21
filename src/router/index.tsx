@@ -30,6 +30,11 @@ const Certificates = lazy(() =>
     default: module.Certificates,
   })),
 );
+const CertificateShow = lazy(() =>
+  import('@/views/environments/client/certificates/show').then((module) => ({
+    default: module.CertificateShow,
+  })),
+);
 const News = lazy(() =>
   import('@/views/environments/client/news/page').then((module) => ({
     default: module.News,
@@ -139,6 +144,14 @@ export function Router() {
             element={
               <LazyElement>
                 <Certificates />
+              </LazyElement>
+            }
+          />
+          <Route
+            path="/certificates/:id"
+            element={
+              <LazyElement>
+                <CertificateShow />
               </LazyElement>
             }
           />

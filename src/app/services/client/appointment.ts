@@ -24,6 +24,15 @@ export type StoreExamPayload = {
   observations: string;
 };
 
+export type StoreExamResponse = {
+  message?: string;
+  data?: {
+    id: number;
+    aso_number?: number | null;
+    aso_date?: string | null;
+  };
+};
+
 function digitsOnly(value: string | null | undefined): string {
   return (value ?? '').replace(/\D/g, '');
 }
@@ -46,7 +55,7 @@ export async function getSchedules(date?: string) {
   return data.available_schedules;
 }
 
-export async function storeExam(payload: StoreExamPayload) {
+export async function storeExam(payload: StoreExamPayload): Promise<StoreExamResponse> {
   const { employee } = payload;
 
   const requestPayload = {
@@ -69,6 +78,6 @@ export async function storeExam(payload: StoreExamPayload) {
     exams: normalizeExamIds(payload.exams),
   };
 
-  const { data } = await api.post('client/exam-store', requestPayload);
+  const { data } = await api.post<StoreExamResponse>('client/exam-store', requestPayload);
   return data;
 }

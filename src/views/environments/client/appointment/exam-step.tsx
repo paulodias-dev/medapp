@@ -32,13 +32,24 @@ export function ExamStep() {
 
   const { mutate: submitAppointment, isPending: isSubmitting } = useMutation({
     mutationFn: (payload: StoreExamPayload) => clientService.appointment.storeExam(payload),
-    onSuccess: () => {
-      toast.success('Agendamento realizado com sucesso!');
+    onSuccess: (response) => {
+      const createdExamId = Number(response?.data?.id);
+
+      toast.success('Solicitação de atestado realizada com sucesso!');
       resetData();
+
+      if (Number.isFinite(createdExamId) && createdExamId > 0) {
+        navigate(`/certificates/${createdExamId}`, {
+          replace: true,
+          state: { fromSubmission: true },
+        });
+        return;
+      }
+
       navigate('/certificates');
     },
     onError: () => {
-      toast.error('Erro ao realizar agendamento. Tente novamente.');
+      toast.error('Erro ao realizar solicitação. Tente novamente.');
     },
   });
 

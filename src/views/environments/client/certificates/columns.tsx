@@ -15,6 +15,10 @@ function getStatusMeta(status: number) {
     return { label: 'Pendente', variant: 'outline' as const };
   }
 
+  if (status === 2) {
+    return { label: 'Cancelado', variant: 'default' as const };
+  }
+
   return { label: 'Reprovado', variant: 'default' as const };
 }
 
@@ -36,7 +40,7 @@ export const columns: ColumnDef<ClinicalResultListItem>[] = [
       );
     },
     cell: ({ row }) => {
-      return <div>{row.original.aso_number ?? row.original.id}</div>;
+      return <div>{row.original.aso_number ?? '-'}</div>;
     },
   },
   {

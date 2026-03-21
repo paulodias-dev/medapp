@@ -188,3 +188,22 @@ export async function getExamPdfBlob(id: number | string): Promise<Blob> {
 
   return data;
 }
+
+type CancelExamResponse = {
+  success: boolean;
+  message: string;
+  data?: {
+    id: number;
+    status: number;
+    observation?: string | null;
+  };
+};
+
+export async function cancelExamRequest(
+  id: number | string,
+  reason?: string,
+): Promise<CancelExamResponse> {
+  const payload = reason?.trim() ? { reason: reason.trim() } : {};
+  const { data } = await api.post<CancelExamResponse>(`/client/exam/${id}/cancel`, payload);
+  return data;
+}

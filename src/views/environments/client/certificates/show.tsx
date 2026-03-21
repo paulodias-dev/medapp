@@ -1,7 +1,16 @@
 import { clientService } from '@/app/services/client';
 import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/views/components/ui/dialog';
+import { Textarea } from '@/views/components/ui/textarea';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarBlank, FilePdf, SpinnerGap, User } from '@phosphor-icons/react';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { useState } from 'react';
@@ -29,6 +38,10 @@ function getStatusMeta(status: number): StatusMeta {
     return { label: 'Pendente', variant: 'outline' };
   }
 
+  if (status === 2) {
+    return { label: 'Cancelado', variant: 'default' };
+  }
+
   return { label: 'Reprovado', variant: 'default' };
 }
 
@@ -45,9 +58,12 @@ function formatDate(value?: string | null, withTime = false): string {
 }
 
 export function CertificateShow() {
+  const queryClient = useQueryClient();
   const { id } = useParams();
   const location = useLocation();
   const [openingPdf, setOpeningPdf] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const examId = Number(id);
   const isValidExamId = Number.isFinite(examId) && examId > 0;
 
@@ -62,6 +78,23 @@ export function CertificateShow() {
   const details = query.data?.data;
   const statusMeta = getStatusMeta(Number(details?.status ?? 0));
   const fromSubmission = Boolean((location.state as { fromSubmission?: boolean } | null)?.fromSubmission);
+
+  const cancelMutation = useMutation({
+    mutationFn: () => clientService.cancelExamRequest(examId, cancelReason),
+    onSuccess: (response) => {
+      toast.success(response.message || 'Solicitação cancelada com sucesso.');
+      setCancelDialogOpen(false);
+      setCancelReason('');
+      void query.refetch();
+      void queryClient.invalidateQueries({ queryKey: ['getAllExams'] });
+      void queryClient.invalidateQueries({ queryKey: ['sumaryExams'] });
+      void queryClient.invalidateQueries({ queryKey: ['warningExams'] });
+      void queryClient.invalidateQueries({ queryKey: ['laudo-notifications-feed'] });
+    },
+    onError: () => {
+      toast.error('Não foi possível cancelar a solicitação.');
+    },
+  });
 
   async function handleOpenPdf() {
     if (!isValidExamId) return;
@@ -150,7 +183,7 @@ export function CertificateShow() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-2xl border bg-slate-50 p-4 space-y-1">
-                  <p className="text-xs uppercase font-bold tracking-wider text-slate-500">ASO</p>
+                  <p className="text-xs uppercase font-bold tracking-wider text-slate-500">ID do Registro</p>
                   <p className="text-lg font-black text-slate-900">#{details.aso_number ?? details.id}</p>
                 </div>
 
@@ -237,11 +270,71 @@ export function CertificateShow() {
                   )}
                   Visualizar PDF
                 </Button>
+
+                {Number(details.status) === 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={() => setCancelDialogOpen(true)}>
+                    Cancelar solicitação
+                  </Button>
+                )}
               </aside>
             </div>
           )}
         </section>
       </div>
+
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="z-[999999] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Cancelar solicitação</DialogTitle>
+            <DialogDescription>
+              Esta ação altera o status do pedido para cancelado. Você pode informar o motivo abaixo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Motivo (opcional)
+            </p>
+            <Textarea
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              placeholder="Ex.: colaborador indisponível para comparecimento."
+              className="min-h-[120px] rounded-xl"
+              maxLength={500}
+            />
+            <p className="text-xs text-slate-400">{cancelReason.length}/500</p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setCancelDialogOpen(false)}
+              disabled={cancelMutation.isPending}>
+              Voltar
+            </Button>
+            <Button
+              type="button"
+              className="rounded-xl bg-red-600 hover:bg-red-700"
+              onClick={() => cancelMutation.mutate()}
+              disabled={cancelMutation.isPending}>
+              {cancelMutation.isPending ? (
+                <>
+                  <SpinnerGap className="h-4 w-4 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                'Confirmar cancelamento'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

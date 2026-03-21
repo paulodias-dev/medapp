@@ -1,5 +1,6 @@
 import { auth } from './auth';
 import {
+  cancelExamRequest,
   getExamById,
   getExamFileDownloadUrl,
   getExamFileViewerUrl,
@@ -30,6 +31,7 @@ export const clientService = {
   getPatientsList,
   getPatientByCpf,
   getExamById,
+  cancelExamRequest,
   getExamFileViewerUrl,
   getExamFileDownloadUrl,
   getExamPdfBlob,

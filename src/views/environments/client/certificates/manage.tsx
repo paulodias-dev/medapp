@@ -223,7 +223,7 @@ export function Manage({ exam }: ManageProps) {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <InfoItem label="ID do Registro" value={String(exam.id)} icon={<Info size={14} />} />
-                <InfoItem label="Número do ASO" value={String(exam.aso_number ?? exam.id)} icon={<IdentificationCard size={14} />} />
+                <InfoItem label="Número do ASO" value={String(exam.aso_number ?? '-')} icon={<IdentificationCard size={14} />} />
                 <InfoItem label="E-mail" value={patientEmail} icon={<Envelope size={14} />} />
                 <InfoItem label="Status" value={statusMeta.label} icon={<Clock size={14} />} />
                 <InfoItem label="Visibilidade" value={exam.public ? 'Público' : 'Privado'} icon={<Eye size={14} />} />
@@ -348,6 +348,10 @@ function getStatusMeta(status: number) {
 
   if (status === 0) {
     return { label: 'Pendente', variant: 'outline' as const };
+  }
+
+  if (status === 2) {
+    return { label: 'Cancelado', variant: 'default' as const };
   }
 
   return { label: 'Reprovado', variant: 'default' as const };

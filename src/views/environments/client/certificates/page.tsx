@@ -1,3 +1,4 @@
+import { useAuth } from '@/app/context/use-auth';
 import { clientService } from '@/app/services/client';
 import { DataTable } from '@/views/components/data-table';
 import { useQuery } from '@tanstack/react-query';
@@ -16,14 +17,17 @@ import { useState } from 'react';
 import { columns } from './columns';
 
 export function Certificates() {
+  const { user } = useAuth();
+
   const {
     data: getAllExams,
     isLoading,
     isError,
+    refetch,
   } = useQuery({
-    queryKey: ['getAllExams'],
+    queryKey: ['getAllExams', user?.id ?? 'anonymous'],
     queryFn: clientService.getAllExams,
-    retry: false,
+    retry: 1,
   });
 
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -65,8 +69,16 @@ export function Certificates() {
           )}
 
           {isError && (
-            <div className="px-6 py-12 text-sm text-red-500 text-center">
-              Não foi possível carregar a listagem de atestados.
+            <div className="px-6 py-12 text-center space-y-3">
+              <p className="text-sm text-red-500">
+                Não foi possível carregar a listagem de atestados.
+              </p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="inline-flex items-center rounded-xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50">
+                Tentar novamente
+              </button>
             </div>
           )}
 
@@ -76,4 +88,3 @@ export function Certificates() {
     </div>
   );
 }
-

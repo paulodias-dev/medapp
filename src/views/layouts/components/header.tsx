@@ -36,12 +36,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Out } from './out';
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { user, switchTenant } = useAuth();
+  const { user, switchTenant, signOut } = useAuth();
 
   const { data: profile } = useQuery({
     queryKey: ['profileHeaderAvatar'],
@@ -117,6 +116,11 @@ export function Header() {
     { to: "/newsroom", label: "Novidades", icon: Lightning },
   ];
 
+  function handleSignOut() {
+    signOut();
+    toast.success('Sessão encerrada com sucesso.');
+  }
+
   return (
     <div className="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-md border-b border-slate-100">
       <header className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
@@ -157,6 +161,20 @@ export function Header() {
                   </div>
                   <CaretRight size={16} weight="bold" />
                 </Link>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    handleSignOut();
+                  }}
+                  className="mt-2 w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-red-50 text-red-700 font-bold text-sm transition-all active:scale-[0.98]">
+                  <div className="flex items-center gap-2">
+                    <SignOut size={20} weight="bold" />
+                    Sair
+                  </div>
+                  <CaretRight size={16} weight="bold" />
+                </button>
               </div>
 
               <div className="absolute bottom-0 w-full p-4 border-t border-slate-50 bg-slate-50/50">
@@ -341,12 +359,20 @@ export function Header() {
 
               <DropdownMenuSeparator className="my-2 bg-slate-100" />
 
-              <DropdownMenuItem asChild className="rounded-xl cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50 py-3 px-3 transition-colors">
+              <DropdownMenuItem
+                className="rounded-xl cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50 py-3 px-3 transition-colors"
+                onSelect={(event) => {
+                  event.preventDefault();
+                  handleSignOut();
+                }}>
                 <div className="flex items-center gap-3 w-full">
                   <div className="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
                     <SignOut size={18} weight="bold" />
                   </div>
-                  <Out />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-sm text-red-700">Sair</span>
+                    <span className="text-[10px] text-red-400 font-bold">Encerrar sessão atual</span>
+                  </div>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>

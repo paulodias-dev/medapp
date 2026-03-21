@@ -1,5 +1,6 @@
 import { useAuth } from '@/app/context/use-auth';
 import { AuthProps } from '@/app/models';
+import { getRememberMePreference } from '@/app/utils/auth-storage';
 import { cpfCnpjMask } from '@/app/utils';
 import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
@@ -83,6 +84,7 @@ const schema = z.object({
 export function SignIn() {
   const { signIn } = useAuth();
   const [passwordType, setPasswordType] = useState(true);
+  const [rememberMe, setRememberMe] = useState<boolean>(() => getRememberMePreference());
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -93,8 +95,8 @@ export function SignIn() {
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (props: AuthProps) => {
-      await signIn(props);
+    mutationFn: async (payload: { credentials: AuthProps; remember: boolean }) => {
+      await signIn(payload.credentials, { remember: payload.remember });
     },
     onError: (error) => {
       console.error('Authentication failed: response is null');
@@ -105,7 +107,7 @@ export function SignIn() {
   });
 
   function onSubmit(data: AuthProps) {
-    mutate(data);
+    mutate({ credentials: data, remember: rememberMe });
   }
 
   return (
@@ -164,6 +166,16 @@ export function SignIn() {
                     </button>
                   }
                   required></InputFormItem>
+
+                <label className="inline-flex items-center gap-2 text-sm text-slate-600 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Continuar logado
+                </label>
 
                 <Button
                   type="submit"

@@ -1,9 +1,17 @@
 /* eslint-disable react-refresh/only-export-components */
-import { localStorageKeys } from '@/app/config/local-storage-keys';
 import { AuthProps, SwitchTenantResponse } from '@/app/models';
 import { disconnectEcho } from '@/app/realtime/echo';
 import { api } from '@/app/services';
 import { clientService } from '@/app/services/client';
+import {
+  clearAuthSession,
+  getRememberMePreference,
+  getStoredActiveTenantId,
+  getStoredAccessToken,
+  getStoredUserRaw,
+  persistAuthSession as persistAuthStorageSession,
+  setStoredActiveTenantId,
+} from '@/app/utils/auth-storage';
 import {
   createContext,
   ReactNode,
@@ -19,7 +27,7 @@ import { jwtDecode } from 'jwt-decode';
 type AuthContextType = {
   user: User | null;
   token: string | null;
-  signIn: (props: AuthProps) => Promise<void>;
+  signIn: (props: AuthProps, options?: { remember?: boolean }) => Promise<void>;
   switchTenant: (tenantId: number | string) => Promise<SwitchTenantResponse>;
   signOut: () => void;
   isTokenExpired: boolean;
@@ -42,7 +50,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(() => {
     try {
-      const rawUser = localStorage.getItem(localStorageKeys.USER_DATA);
+      const rawUser = getStoredUserRaw();
       if (!rawUser) return null;
 
       const parsed = JSON.parse(rawUser) as Partial<User>;
@@ -62,8 +70,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuth, setIsAuth] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  const persistAuthSession = useCallback(
-    (props: { id: number; name: string; email: string; api_token: string }) => {
+  const persistSessionState = useCallback(
+    (
+      props: { id: number; name: string; email: string; api_token: string },
+      remember: boolean,
+    ) => {
       disconnectEcho();
 
       const userData = {
@@ -78,15 +89,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsAuth(true);
       setIsAuthReady(true);
 
-      localStorage.setItem(localStorageKeys.USER_DATA, JSON.stringify(userData));
-      localStorage.setItem(localStorageKeys.ACCESS_TOKEN, props.api_token);
-      localStorage.setItem(localStorageKeys.ACTIVE_TENANT_ID, String(props.id));
+      persistAuthStorageSession({
+        token: props.api_token,
+        userData: JSON.stringify(userData),
+        activeTenantId: String(props.id),
+        remember,
+      });
       api.defaults.headers.Authorization = `Bearer ${props.api_token}`;
     },
     []
   );
 
-  const signIn = useCallback(async (params: AuthProps) => {
+  const signIn = useCallback(async (params: AuthProps, options?: { remember?: boolean }) => {
     const props = await clientService.auth(params);
 
     if (!props) {
@@ -94,22 +108,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error('Authentication failed: props is null');
     }
 
-    persistAuthSession(props);
-  }, [persistAuthSession]);
+    persistSessionState(props, options?.remember ?? true);
+  }, [persistSessionState]);
 
   const switchTenant = useCallback(
     async (tenantId: number | string): Promise<SwitchTenantResponse> => {
       const response = await clientService.tenant.switchTenant(tenantId);
-      persistAuthSession(response);
+      persistSessionState(response, getRememberMePreference());
       return response;
     },
-    [persistAuthSession]
+    [persistSessionState]
   );
 
   const signOut = useCallback(() => {
     disconnectEcho();
 
-    const token = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
+    const token = getStoredAccessToken();
 
     if (token && !checkTokenExpiration(token)) {
       void clientService.logout().catch(() => undefined);
@@ -120,13 +134,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsTokenExpired(true);
     setIsAuth(false);
     setIsAuthReady(true);
-    localStorage.removeItem(localStorageKeys.USER_DATA);
-    localStorage.removeItem(localStorageKeys.ACCESS_TOKEN);
-    localStorage.removeItem(localStorageKeys.ACTIVE_TENANT_ID);
+    clearAuthSession();
+    delete api.defaults.headers.common.Authorization;
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
+    const token = getStoredAccessToken();
 
     if (!token || checkTokenExpiration(token)) {
       signOut();
@@ -139,8 +152,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsAuth(true);
     api.defaults.headers.Authorization = `Bearer ${token}`;
 
-    if (!localStorage.getItem(localStorageKeys.ACTIVE_TENANT_ID) && user?.id) {
-      localStorage.setItem(localStorageKeys.ACTIVE_TENANT_ID, String(user.id));
+    if (user?.id && !getStoredActiveTenantId()) {
+      setStoredActiveTenantId(String(user.id));
     }
 
     setIsAuthReady(true);

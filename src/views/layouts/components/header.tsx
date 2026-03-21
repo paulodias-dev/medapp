@@ -1,7 +1,7 @@
-import { localStorageKeys } from '@/app/config/local-storage-keys';
 import { useAuth } from '@/app/context/use-auth';
 import { clientService } from '@/app/services/client';
 import { resolveClientAvatarUrl } from '@/app/utils';
+import { getStoredActiveTenantId } from '@/app/utils/auth-storage';
 import { Button } from '@/views/components/ui/button';
 import {
   DropdownMenu,
@@ -70,7 +70,7 @@ export function Header() {
 
   const activeTenantId = Number(
     user?.id ??
-      localStorage.getItem(localStorageKeys.ACTIVE_TENANT_ID) ??
+      getStoredActiveTenantId() ??
       profile?.id ??
       0
   );

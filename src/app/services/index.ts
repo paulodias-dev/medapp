@@ -1,6 +1,13 @@
-import { localStorageKeys } from '../config/local-storage-keys';
 import { QueryClient } from '@tanstack/react-query';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import {
+  clearAuthSession,
+  getStoredAccessToken,
+  getStoredActiveTenantId,
+  getStoredUserRaw,
+  persistRefreshedAccessToken,
+  setStoredActiveTenantId,
+} from '@/app/utils/auth-storage';
 
 export const api = axios.create({
   baseURL: 'https://ssma-gestor.fluxosistemas.com.br/api/',
@@ -18,14 +25,12 @@ let requestQueue: Array<{
 }> = [];
 
 function clearAuthAndRedirect() {
-  localStorage.removeItem(localStorageKeys.ACCESS_TOKEN);
-  localStorage.removeItem(localStorageKeys.USER_DATA);
-  localStorage.removeItem(localStorageKeys.ACTIVE_TENANT_ID);
+  clearAuthSession();
   window.location.href = '/auth';
 }
 
 function getStoredUserId(): number | null {
-  const rawUser = localStorage.getItem(localStorageKeys.USER_DATA);
+  const rawUser = getStoredUserRaw();
   if (!rawUser) {
     return null;
   }
@@ -57,7 +62,7 @@ function processQueue(error: unknown, token: string | null = null) {
 }
 
 async function refreshToken(): Promise<string> {
-  const currentToken = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
+  const currentToken = getStoredAccessToken();
 
   if (!currentToken) {
     throw new Error('Token ausente');
@@ -79,7 +84,7 @@ async function refreshToken(): Promise<string> {
     throw new Error('Token de refresh inválido');
   }
 
-  localStorage.setItem(localStorageKeys.ACCESS_TOKEN, newToken);
+  persistRefreshedAccessToken(newToken);
   api.defaults.headers.Authorization = `Bearer ${newToken}`;
 
   return newToken;
@@ -87,8 +92,8 @@ async function refreshToken(): Promise<string> {
 
 // Request interceptor to add Authorization header
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
-  const activeTenantId = localStorage.getItem(localStorageKeys.ACTIVE_TENANT_ID);
+  const token = getStoredAccessToken();
+  const activeTenantId = getStoredActiveTenantId();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -171,7 +176,7 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      localStorage.setItem(localStorageKeys.ACTIVE_TENANT_ID, String(userId));
+      setStoredActiveTenantId(String(userId));
       originalRequest._tenantRetry = true;
       originalRequest.headers = originalRequest.headers ?? {};
       originalRequest.headers['X-Tenant-ID'] = String(userId);

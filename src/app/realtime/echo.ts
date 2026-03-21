@@ -1,8 +1,8 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
-import { localStorageKeys } from '@/app/config/local-storage-keys';
 import { api } from '@/app/services';
+import { getStoredAccessToken, getStoredActiveTenantId } from '@/app/utils/auth-storage';
 
 declare global {
   interface Window {
@@ -20,8 +20,8 @@ function parsePort(value: string | undefined, fallback: number): number {
 }
 
 function getAuthHeaders(): Record<string, string> {
-  const token = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
-  const activeTenantId = localStorage.getItem(localStorageKeys.ACTIVE_TENANT_ID);
+  const token = getStoredAccessToken();
+  const activeTenantId = getStoredActiveTenantId();
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -43,7 +43,7 @@ export function getEchoInstance(): EchoInstance | null {
     return echoInstance;
   }
 
-  const token = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
+  const token = getStoredAccessToken();
   if (!token) {
     return null;
   }

@@ -2,6 +2,7 @@ import { localStorageKeys } from '@/app/config/local-storage-keys';
 import { useAuth } from '@/app/context/use-auth';
 import { LaudoRealtimePayload } from '@/app/models';
 import { clientService } from '@/app/services/client';
+import { getStoredActiveTenantId } from '@/app/utils/auth-storage';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
@@ -60,7 +61,7 @@ export function useLaudoRealtime(options: UseLaudoRealtimeOptions = {}): void {
     }
 
     const activeTenantRaw =
-      localStorage.getItem(localStorageKeys.ACTIVE_TENANT_ID) ?? String(user?.id ?? '');
+      getStoredActiveTenantId() ?? String(user?.id ?? '');
     const tenantId = Number(activeTenantRaw);
 
     if (!Number.isFinite(tenantId) || tenantId <= 0) {

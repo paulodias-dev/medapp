@@ -43,25 +43,25 @@ export function News() {
   const currentDate = format(new Date(), "dd 'de' MMMM", { locale: ptBR });
 
   return (
-    <div className="pb-20 bg-slate-50/30 min-h-screen">
-      <div className="bg-white border-b sticky top-16 z-10 backdrop-blur-md bg-white/80">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-1 animate-in fade-in slide-in-from-left-4 duration-500">
-            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Novidades</h1>
-            <p className="text-slate-500 font-medium flex items-center gap-2">
+    <div className="pb-20 bg-slate-50/50 min-h-screen">
+      <div className="bg-white border-b border-slate-100 sticky top-20 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Novidades</h1>
+            <p className="text-slate-500 font-medium flex items-center gap-2 text-sm">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               Atualizado em {currentDate}
             </p>
           </div>
-          <div className="flex gap-2 animate-in fade-in slide-in-from-right-4 duration-500">
-             <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-2xl text-sm font-bold border border-blue-100 shadow-sm">
-                Informativo Mensal
-             </div>
+          <div className="flex gap-2">
+            <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-2xl text-sm font-bold border border-blue-100 shadow-sm">
+              Informativo Mensal
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 py-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
         {loading ? (
           [1, 2, 3].map((i) => (
             <div key={i} className="flex flex-col gap-4">
@@ -132,7 +132,7 @@ export function News() {
       </div>
 
       {!loading && (
-        <div className="max-w-7xl mx-auto px-6 py-10 animate-in fade-in duration-1000">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-[2.5rem] p-12 text-white relative overflow-hidden shadow-2xl">
             <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 justify-between">

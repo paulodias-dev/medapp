@@ -46,9 +46,9 @@ export function AsoCompliance({
       key: 'active',
     },
     {
-      title: 'Com Alteração',
+      title: 'ASOs Vencidos',
       amount: warningAsos,
-      description: 'Requerem atenção',
+      description: 'Mais de 12 meses',
       bg: 'bg-amber-50',
       border: 'border-amber-100',
       amountColor: 'text-amber-700',
@@ -103,4 +103,3 @@ export function AsoCompliance({
     </>
   );
 }
-

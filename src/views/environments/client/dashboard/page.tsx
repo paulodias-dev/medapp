@@ -124,16 +124,16 @@ export function Dashboard() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-black text-slate-900">Exames com alterações</h2>
+              <h2 className="text-lg font-black text-slate-900">ASOs vencidos</h2>
               <p className="text-sm text-slate-500 font-medium">
-                Exames com alterações identificados para atenção imediata.
+                Monitoramento de ASOs com vencimento superior a 12 meses.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
               <Input
                 className="max-w-64 h-10 rounded-xl border-slate-200 text-sm"
-                placeholder="Pesquisar por atestado..."
+                placeholder="Pesquisar por colaborador..."
                 onChange={(event) =>
                   table.getColumn('nome')?.setFilterValue(event.target.value)
                 }

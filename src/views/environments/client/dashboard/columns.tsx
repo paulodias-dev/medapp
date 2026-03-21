@@ -22,7 +22,8 @@ function getStatusMeta(status: number) {
 
 export const columns: ColumnDef<WarningExamResponse>[] = [
   {
-    accessorKey: 'id',
+    accessorFn: (row) => row.aso_number ?? row.id,
+    id: 'aso',
     header: ({ column }) => {
       return (
         <Button
@@ -36,6 +37,7 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
     },
     cell: ({ row }) => {
       const [copiedId, setCopiedId] = useState<string | null>(null);
+      const asoValue = String(row.getValue('aso'));
 
       async function handleCopyToClipBoard(id: string) {
         try {
@@ -51,19 +53,19 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
 
       return (
         <div className="group flex items-center gap-2 font-medium">
-          {row.getValue('id')}
+          {asoValue}
           <Button
             size="icon"
             variant="outline"
             className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={() => handleCopyToClipBoard(String(row.getValue('id')))}>
-            {copiedId === String(row.getValue('id')) ? (
+            onClick={() => handleCopyToClipBoard(asoValue)}>
+            {copiedId === asoValue ? (
               <Check className="h-3 w-3 text-green-500" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
             <span className="sr-only">
-              {copiedId === String(row.getValue('id')) ? 'Copiado!' : 'Copiar ID'}
+              {copiedId === asoValue ? 'Copiado!' : 'Copiar ASO'}
             </span>
           </Button>
         </div>
@@ -126,6 +128,43 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
     },
   },
   {
+    accessorFn: (row) => row.expires_at ?? '-',
+    id: 'expires_at',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="center"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Vencimento
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      return <div className="px-3">{formatDatePtBr(row.original.expires_at)}</div>;
+    },
+  },
+  {
+    accessorFn: (row) => row.days_overdue ?? 0,
+    id: 'days_overdue',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="center"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+          Dias em atraso
+          <CaretSortIcon className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const days = row.original.days_overdue ?? 0;
+      return <div className="px-3 font-medium">{days}</div>;
+    },
+  },
+  {
     accessorKey: 'status',
     header: ({ column }) => {
       return (
@@ -149,3 +188,18 @@ export const columns: ColumnDef<WarningExamResponse>[] = [
     },
   },
 ];
+
+function formatDatePtBr(value?: string | null): string {
+  if (!value) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return '-';
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+  }).format(parsed);
+}

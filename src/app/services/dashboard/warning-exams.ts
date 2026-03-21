@@ -2,6 +2,11 @@ import { api } from '..';
 
 type WarningResponse = {
   warning_exams: Array<WarningExamResponse>;
+  meta?: {
+    reference_date: string;
+    expiration_cutoff: string;
+    total_expired: number;
+  };
 };
 
 export type WarningExamResponse = {
@@ -14,16 +19,19 @@ export type WarningExamResponse = {
   department_id: number;
   position_id: number;
   aso_number: number;
-  aso_date: Date;
+  aso_date: string | null;
   work_at_height: boolean;
   confined_space: boolean;
   sequential_audiometry: boolean;
   observation: string;
   status: number;
   public: boolean;
-  deleted_at: Date | null;
-  created_at: Date;
-  updated_at: Date;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+  is_expired?: boolean;
+  expires_at?: string | null;
+  days_overdue?: number;
   patient: {
     id: number;
     name: string;
@@ -34,8 +42,8 @@ export type WarningExamResponse = {
     id: number;
     name: string;
     active: number;
-    created_at: Date | null;
-    updated_at: Date | null;
+    created_at: string | null;
+    updated_at: string | null;
   };
 };
 

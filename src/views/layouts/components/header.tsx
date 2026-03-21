@@ -30,11 +30,13 @@ import {
   CaretRight
 } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Out } from './out';
 
 export function Header() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const { data: profile } = useQuery({
     queryKey: ['profileHeaderAvatar'],
     queryFn: clientService.verifyToken,
@@ -88,7 +90,7 @@ export function Header() {
       <header className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
         <div className="flex items-center gap-8">
           {/* Mobile Menu Trigger */}
-          <Sheet>
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden rounded-xl text-slate-600">
                 <List size={24} weight="bold" />
@@ -104,7 +106,7 @@ export function Header() {
               <div className="flex flex-col gap-1 p-4">
                 <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Navegação</p>
                 {navigationItems.map((item) => (
-                  <NavItem key={item.to} to={item.to} icon={item.icon}>
+                  <NavItem key={item.to} to={item.to} icon={item.icon} onClick={() => setMobileOpen(false)}>
                     {item.label}
                   </NavItem>
                 ))}
@@ -114,6 +116,7 @@ export function Header() {
                 <p className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ações</p>
                 <Link
                   to="/certificate"
+                  onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-between px-4 py-3 rounded-2xl bg-blue-50 text-blue-700 font-bold text-sm transition-all active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-2">

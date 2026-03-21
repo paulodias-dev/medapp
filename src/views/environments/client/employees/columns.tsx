@@ -91,7 +91,7 @@ export const columns: ColumnDef<ClientPatientListItem>[] = [
     cell: () => (
       <div className="flex items-center justify-center">
         <Button asChild size="sm" variant="outline" className="rounded-xl">
-          <Link to="/certificate/date">Solicitar exame</Link>
+          <Link to="/certificate">Solicitar exame</Link>
         </Button>
       </div>
     ),

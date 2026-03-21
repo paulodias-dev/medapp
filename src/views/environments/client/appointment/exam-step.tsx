@@ -1,4 +1,5 @@
 import { useAppointment } from '@/app/context/appointment-context';
+import { useAppointmentSettings } from '@/app/hooks/use-appointment-settings';
 import { StoreExamPayload } from '@/app/services/client/appointment';
 import { clientService } from '@/app/services/client';
 import { Button } from '@/views/components/ui/button';
@@ -26,6 +27,7 @@ function formatDateLabel(date: string | null): string {
 
 export function ExamStep() {
   const navigate = useNavigate();
+  const { isSchedulingEnabled } = useAppointmentSettings();
   const { data: appointmentData, setStepData, resetData } = useAppointment();
 
   const { mutate: submitAppointment, isPending: isSubmitting } = useMutation({
@@ -62,7 +64,7 @@ export function ExamStep() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
-              Etapa 4 de 4
+              {isSchedulingEnabled ? 'Etapa 4 de 4' : 'Etapa 3 de 3'}
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               Exames do contrato
@@ -242,6 +244,9 @@ function ExamList({ appointmentData, initialSelected, onSubmit, isSubmitting, on
               Data: {formatDateLabel(appointmentData.date)}
             </p>
             <p className="text-slate-600">Horário: {appointmentData.time ?? '-'}</p>
+            <p className="text-slate-600">
+              Modo: {appointmentData.date ? 'Com agendamento' : 'Sem agendamento'}
+            </p>
             <p className="text-slate-600">Tipo: {selectedTypeName}</p>
           </div>
 

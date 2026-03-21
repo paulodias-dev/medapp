@@ -1,4 +1,5 @@
 import { useAppointment } from '@/app/context/appointment-context';
+import { useAppointmentSettings } from '@/app/hooks/use-appointment-settings';
 import { clientService } from '@/app/services/client';
 import { Button } from '@/views/components/ui/button';
 import { Textarea } from '@/views/components/ui/textarea';
@@ -37,6 +38,7 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export function TypeExamStep() {
   const navigate = useNavigate();
+  const { isSchedulingEnabled } = useAppointmentSettings();
   const { data: appointmentData, setStepData } = useAppointment();
   const [selectedOption, setSelectedOption] = useState<number | null>(appointmentData.type_id);
   const [observations, setObservations] = useState(appointmentData.observations);
@@ -75,7 +77,7 @@ export function TypeExamStep() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
-              Etapa 3 de 4
+              {isSchedulingEnabled ? 'Etapa 3 de 4' : 'Etapa 2 de 3'}
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               Tipo de exame

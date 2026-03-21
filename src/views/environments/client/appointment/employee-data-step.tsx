@@ -1,4 +1,5 @@
 import { useAppointment } from '@/app/context/appointment-context';
+import { useAppointmentSettings } from '@/app/hooks/use-appointment-settings';
 import { ClientPatientListItem } from '@/app/models';
 import { clientService } from '@/app/services/client';
 import { maskRGIE, phoneMask } from '@/app/utils';
@@ -31,6 +32,7 @@ type LookupState = 'idle' | 'searching' | 'found' | 'not_found' | 'error';
 
 export function EmployeeDataStep() {
   const navigate = useNavigate();
+  const { isSchedulingEnabled, isLoading: appointmentSettingsLoading } = useAppointmentSettings();
   const { data: appointmentData, setStepData } = useAppointment();
   const employee = appointmentData.employee;
 
@@ -152,13 +154,37 @@ export function EmployeeDataStep() {
 
   const inputErrorClass = 'border-red-500 focus-visible:ring-red-500';
 
+  useEffect(() => {
+    if (appointmentSettingsLoading) {
+      return;
+    }
+
+    if (isSchedulingEnabled && (!appointmentData.date || !appointmentData.time)) {
+      navigate('/certificate/date', { replace: true });
+    }
+  }, [
+    appointmentData.date,
+    appointmentData.time,
+    appointmentSettingsLoading,
+    isSchedulingEnabled,
+    navigate,
+  ]);
+
+  if (appointmentSettingsLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-sm font-medium text-slate-400">
+        Carregando...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-16">
       <div className="bg-white border-b border-slate-100 sticky top-20 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
-              Etapa 2 de 4
+              {isSchedulingEnabled ? 'Etapa 2 de 4' : 'Etapa 1 de 3'}
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               Dados do colaborador

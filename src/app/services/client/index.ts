@@ -5,6 +5,7 @@ import {
   getExamFileViewerUrl,
   getExamPdfBlob,
 } from './exam-details';
+import { getAppointmentSettings } from './appointment-settings';
 import { getAllExams } from './exams-list';
 import { forgotPassword } from './forgot-password';
 import { logout } from './logout';
@@ -32,6 +33,7 @@ export const clientService = {
   getExamFileViewerUrl,
   getExamFileDownloadUrl,
   getExamPdfBlob,
+  getAppointmentSettings,
   update,
   changePassword,
   tenant,

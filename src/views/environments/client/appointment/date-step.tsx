@@ -1,9 +1,11 @@
 import { clientService } from '@/app/services/client';
+import { useAppointmentSettings } from '@/app/hooks/use-appointment-settings';
 import { Button } from '@/views/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { Newspaper } from '@phosphor-icons/react';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, isBefore, startOfDay } from 'date-fns';
 
@@ -13,6 +15,7 @@ import { useAppointment } from '@/app/context/appointment-context';
 
 export function DateStep() {
   const navigate = useNavigate();
+  const { isSchedulingEnabled, isLoading: appointmentSettingsLoading } = useAppointmentSettings();
   const { data: appointmentData, setStepData } = useAppointment();
   const today = startOfDay(new Date());
   const initialDate =
@@ -30,8 +33,22 @@ export function DateStep() {
   const { data: availableSchedules, isLoading } = useQuery({
     queryKey: ['available-schedules', formattedDate],
     queryFn: () => clientService.appointment.getSchedules(formattedDate!),
-    enabled: !!formattedDate,
+    enabled: !!formattedDate && isSchedulingEnabled,
   });
+
+  useEffect(() => {
+    if (!appointmentSettingsLoading && !isSchedulingEnabled) {
+      navigate('/certificate/employee', { replace: true });
+    }
+  }, [appointmentSettingsLoading, isSchedulingEnabled, navigate]);
+
+  if (appointmentSettingsLoading || !isSchedulingEnabled) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-sm font-medium text-slate-400">
+        Carregando...
+      </div>
+    );
+  }
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);

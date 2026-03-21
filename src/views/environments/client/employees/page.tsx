@@ -102,7 +102,7 @@ export function Employees() {
                 asChild
                 variant="outline"
                 className="rounded-xl h-10 border-slate-200 font-bold text-slate-700 hover:bg-slate-50 whitespace-nowrap">
-                <Link to="/certificate/date">Solicitar exame</Link>
+                <Link to="/certificate">Solicitar exame</Link>
               </Button>
             </div>
           </div>

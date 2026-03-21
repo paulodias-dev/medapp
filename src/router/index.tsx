@@ -1,4 +1,5 @@
 import { useAuth } from '@/app/context/use-auth';
+import { useAppointmentSettings } from '@/app/hooks/use-appointment-settings';
 import * as Layout from '@/views/layouts';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { AppointmentProvider } from '@/app/context/appointment-context';
@@ -82,6 +83,16 @@ function LazyElement({ children }: { children: ReactNode }) {
   return <Suspense fallback={<RouteLoading />}>{children}</Suspense>;
 }
 
+function AppointmentEntryRedirect() {
+  const { entryPath, isLoading } = useAppointmentSettings();
+
+  if (isLoading) {
+    return <RouteLoading />;
+  }
+
+  return <Navigate to={entryPath} replace />;
+}
+
 export function Router() {
   return (
     <Routes>
@@ -155,7 +166,7 @@ export function Router() {
                 <Outlet />
               </AppointmentProvider>
             }>
-            <Route index element={<Navigate to="date" />} />
+            <Route index element={<AppointmentEntryRedirect />} />
 
             <Route
               path="date"

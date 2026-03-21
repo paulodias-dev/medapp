@@ -1,10 +1,68 @@
 import { localStorageKeys } from '../config/local-storage-keys';
 import { QueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 export const api = axios.create({
   baseURL: 'https://ssma-gestor.fluxosistemas.com.br/api/',
 });
+
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+let isRefreshing = false;
+let requestQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+function clearAuthAndRedirect() {
+  localStorage.removeItem(localStorageKeys.ACCESS_TOKEN);
+  localStorage.removeItem(localStorageKeys.USER_DATA);
+  window.location.href = '/auth';
+}
+
+function processQueue(error: unknown, token: string | null = null) {
+  requestQueue.forEach((queued) => {
+    if (error || !token) {
+      queued.reject(error ?? new Error('Falha ao renovar token'));
+      return;
+    }
+
+    queued.resolve(token);
+  });
+
+  requestQueue = [];
+}
+
+async function refreshToken(): Promise<string> {
+  const currentToken = localStorage.getItem(localStorageKeys.ACCESS_TOKEN);
+
+  if (!currentToken) {
+    throw new Error('Token ausente');
+  }
+
+  const { data } = await axios.post<{ api_token?: string; access_token?: string }>(
+    `${api.defaults.baseURL}client/refresh`,
+    null,
+    {
+      headers: {
+        Authorization: `Bearer ${currentToken}`,
+      },
+    }
+  );
+
+  const newToken = data?.api_token ?? data?.access_token;
+
+  if (!newToken) {
+    throw new Error('Token de refresh inválido');
+  }
+
+  localStorage.setItem(localStorageKeys.ACCESS_TOKEN, newToken);
+  api.defaults.headers.Authorization = `Bearer ${newToken}`;
+
+  return newToken;
+}
 
 // Request interceptor to add Authorization header
 api.interceptors.request.use((config) => {
@@ -18,12 +76,57 @@ api.interceptors.request.use((config) => {
 // Response interceptor to handle 401 errors
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem(localStorageKeys.ACCESS_TOKEN);
-      localStorage.removeItem(localStorageKeys.USER_DATA);
-      window.location.href = '/auth';
+  async (error: AxiosError) => {
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
+    const requestUrl = (originalRequest?.url ?? '').toLowerCase();
+    const isAuthEndpoint =
+      requestUrl.includes('client/auth') ||
+      requestUrl.includes('client/refresh') ||
+      requestUrl.includes('client/forgot-password') ||
+      requestUrl.includes('client/reset-password');
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          requestQueue.push({
+            resolve: (token: string) => {
+              originalRequest.headers = originalRequest.headers ?? {};
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(api(originalRequest));
+            },
+            reject,
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const newToken = await refreshToken();
+        processQueue(null, newToken);
+
+        originalRequest.headers = originalRequest.headers ?? {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        clearAuthAndRedirect();
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
+
+    if (error.response?.status === 401) {
+      clearAuthAndRedirect();
+    }
+
     return Promise.reject(error);
   }
 );

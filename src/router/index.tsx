@@ -248,6 +248,7 @@ type AuthGuardProps = {
 
 export function AuthGuard({ isPrivate }: AuthGuardProps) {
   const { isAuth, isAuthReady } = useAuth();
+  const location = useLocation();
 
   if (!isAuthReady) {
     return null;
@@ -257,7 +258,9 @@ export function AuthGuard({ isPrivate }: AuthGuardProps) {
     return <Navigate to="/auth" />;
   }
 
-  if (isAuth && !isPrivate) {
+  const allowWhenAuthenticated = location.pathname === '/reset-password';
+
+  if (isAuth && !isPrivate && !allowWhenAuthenticated) {
     return <Navigate to="/" replace />;
   }
 

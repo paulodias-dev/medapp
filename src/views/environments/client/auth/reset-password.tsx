@@ -5,9 +5,10 @@ import { InputFormItem } from '@/views/components/ui/input-form-item';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowUpRight, Eye, EyeSlash, SpinnerGap } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
@@ -57,9 +58,9 @@ export function ResetPassword() {
       toast.success(message || 'Senha redefinida com sucesso.');
       navigate('/auth');
     },
-    onError: (error: Error) => {
+    onError: (error: unknown) => {
       toast.error('Não foi possível redefinir a senha.', {
-        description: error.message,
+        description: resolveApiErrorMessage(error),
       });
     },
   });
@@ -125,8 +126,18 @@ export function ResetPassword() {
                     <ArrowUpRight />
                   )}
                 </Button>
+
+                <Button asChild type="button" variant="ghost" className="w-full rounded-xl">
+                  <Link to="/auth">Voltar ao login</Link>
+                </Button>
               </form>
             </Form>
+
+            {!token && (
+              <div className="w-full rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                Link inválido. Solicite uma nova redefinição de senha.
+              </div>
+            )}
           </div>
         </div>
 
@@ -158,4 +169,30 @@ export function ResetPassword() {
       </div>
     </div>
   );
+}
+
+function resolveApiErrorMessage(error: unknown): string {
+  if (error instanceof AxiosError) {
+    const responseData = error.response?.data as
+      | { error?: string; message?: string; details?: Record<string, string[]> | string }
+      | undefined;
+
+    if (responseData?.error) {
+      return responseData.error;
+    }
+
+    if (responseData?.message) {
+      return responseData.message;
+    }
+
+    if (typeof responseData?.details === 'string') {
+      return responseData.details;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Não foi possível concluir a redefinição de senha.';
 }

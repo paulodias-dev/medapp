@@ -2,6 +2,7 @@ import { auth } from './auth';
 import {
   cancelExamRequest,
   getExamById,
+  getExamFileDownloadBlob,
   getExamFileDownloadUrl,
   getExamFileViewerUrl,
   getExamPdfBlob,
@@ -13,7 +14,7 @@ import { forgotPassword } from './forgot-password';
 import { logout } from './logout';
 import * as masterData from './master-data';
 import * as appointment from './appointment';
-import { getPatientByCpf, getPatientsList } from './patients-list';
+import { getPatientByCpf, getPatientById, getPatientsList } from './patients-list';
 import * as realtime from './realtime';
 import { resetPassword } from './reset-password';
 import * as tenant from './tenant';
@@ -31,7 +32,9 @@ export const clientService = {
   getAllExams,
   getPatientsList,
   getPatientByCpf,
+  getPatientById,
   getExamById,
+  getExamFileDownloadBlob,
   cancelExamRequest,
   rescheduleExamRequest,
   getExamFileViewerUrl,

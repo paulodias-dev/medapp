@@ -15,7 +15,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/views/components/ui/input';
 import { CalendarBlank, FilePdf, SpinnerGap, User } from '@phosphor-icons/react';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -69,6 +69,28 @@ function extractRequestedTime(comment?: string | null): string {
   return matched?.[1] ?? '';
 }
 
+function digitsOnly(value?: string | null): string {
+  return (value ?? '').replace(/\D/g, '');
+}
+
+function buildCertificateRequestUrl(patientId?: number | null, cpf?: string | null): string {
+  const params = new URLSearchParams();
+  if (patientId && patientId > 0) {
+    params.set('patientId', String(patientId));
+  }
+
+  const normalizedCpf = digitsOnly(cpf);
+  if (normalizedCpf.length === 11) {
+    params.set('cpf', normalizedCpf);
+  }
+
+  if (!params.toString()) {
+    return '/certificate';
+  }
+
+  return `/certificate?${params.toString()}`;
+}
+
 export function CertificateShow() {
   const queryClient = useQueryClient();
   const { isSchedulingEnabled, isLoading: appointmentSettingsLoading } = useAppointmentSettings();
@@ -95,6 +117,10 @@ export function CertificateShow() {
   const details = query.data?.data;
   const statusMeta = getStatusMeta(Number(details?.status ?? 0));
   const fromSubmission = Boolean((location.state as { fromSubmission?: boolean } | null)?.fromSubmission);
+  const requestNewExamUrl = useMemo(
+    () => buildCertificateRequestUrl(details?.patient?.id, details?.patient?.cpf),
+    [details?.patient?.cpf, details?.patient?.id],
+  );
 
   const cancelMutation = useMutation({
     mutationFn: () => clientService.cancelExamRequest(examId, cancelReason),
@@ -214,7 +240,7 @@ export function CertificateShow() {
               </Link>
             </Button>
             <Button asChild className="rounded-xl">
-              <Link to="/certificate">
+              <Link to={requestNewExamUrl}>
                 Solicitar novo
                 <ArrowUpRight className="w-4 h-4" />
               </Link>

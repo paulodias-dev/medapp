@@ -2,6 +2,7 @@ import { localStorageKeys } from '@/app/config/local-storage-keys';
 import { LaudoRealtimePayload } from '@/app/models';
 
 const MAX_NOTIFICATIONS = 200;
+export const LAUDO_NOTIFICATIONS_UPDATED_EVENT = 'medapp:laudo-notifications-updated';
 
 export type LaudoNotificationItem = {
   id: string;
@@ -77,6 +78,27 @@ function persistLaudoNotifications(tenantId: number, notifications: LaudoNotific
 
   const storageKey = getStorageKey(tenantId);
   localStorage.setItem(storageKey, JSON.stringify(notifications));
+  dispatchNotificationsUpdatedEvent(tenantId, notifications);
+}
+
+function dispatchNotificationsUpdatedEvent(
+  tenantId: number,
+  notifications: LaudoNotificationItem[],
+): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
+
+  window.dispatchEvent(
+    new CustomEvent(LAUDO_NOTIFICATIONS_UPDATED_EVENT, {
+      detail: {
+        tenantId,
+        unreadCount,
+      },
+    }),
+  );
 }
 
 export function upsertLaudoNotifications(

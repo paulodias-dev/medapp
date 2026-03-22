@@ -5,6 +5,13 @@ import {
 import { clientService } from '@/app/services/client';
 import { Badge } from '@/views/components/ui/badge';
 import { Button } from '@/views/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/views/components/ui/dialog';
 import { ScrollArea } from '@/views/components/ui/scroll-area';
 import { Skeleton } from '@/views/components/ui/skeleton';
 import {
@@ -39,6 +46,7 @@ import {
   Info
 } from '@phosphor-icons/react';
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type ManageProps = {
@@ -49,11 +57,80 @@ type FileWithContext = ClinicalResultExamFile & {
   examName: string;
 };
 
+type FilePreviewMode = 'image' | 'pdf' | 'unsupported';
+
+function digitsOnly(value?: string | null): string {
+  return (value ?? '').replace(/\D/g, '');
+}
+
+function buildCertificateRequestUrl(patientId?: number | null, cpf?: string | null): string {
+  const params = new URLSearchParams();
+
+  if (patientId && patientId > 0) {
+    params.set('patientId', String(patientId));
+  }
+
+  const normalizedCpf = digitsOnly(cpf);
+  if (normalizedCpf.length === 11) {
+    params.set('cpf', normalizedCpf);
+  }
+
+  if (!params.toString()) {
+    return '/certificate';
+  }
+
+  return `/certificate?${params.toString()}`;
+}
+
+function resolveFilePreviewMode(file: FileWithContext, fileUrl: string): FilePreviewMode {
+  const type = (file.type ?? '').toLowerCase();
+  const name = (file.name ?? '').toLowerCase();
+  const urlPath = fileUrl.toLowerCase().split('?')[0];
+  const combined = `${type} ${name} ${urlPath}`;
+
+  if (
+    combined.includes('image') ||
+    /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(combined)
+  ) {
+    return 'image';
+  }
+
+  if (combined.includes('pdf') || /\.pdf$/.test(combined)) {
+    return 'pdf';
+  }
+
+  return 'unsupported';
+}
+
+function sanitizeFileName(fileName: string): string {
+  const normalized = fileName.trim();
+  if (!normalized) {
+    return `arquivo-${Date.now()}`;
+  }
+
+  return normalized.replace(/[\\/:*?"<>|]/g, '_');
+}
+
+function triggerAnchorDownload(url: string, fileName: string): void {
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = sanitizeFileName(fileName);
+  anchor.rel = 'noopener noreferrer';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
 export function Manage({ exam }: ManageProps) {
   const [open, setOpen] = useState(false);
   const [openingFileId, setOpeningFileId] = useState<number | null>(null);
   const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null);
   const [openingPdf, setOpeningPdf] = useState(false);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [previewFile, setPreviewFile] = useState<FileWithContext | null>(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewMode, setPreviewMode] = useState<FilePreviewMode>('unsupported');
+  const [imagePreviewError, setImagePreviewError] = useState(false);
 
   const detailQuery = useQuery({
     queryKey: ['exam-details', exam.id],
@@ -85,6 +162,10 @@ export function Manage({ exam }: ManageProps) {
       }));
     });
   }, [details]);
+  const requestNewExamUrl = useMemo(
+    () => buildCertificateRequestUrl(details?.patient?.id ?? exam.patient?.id, details?.patient?.cpf),
+    [details?.patient?.cpf, details?.patient?.id, exam.patient?.id],
+  );
 
   async function handleOpenFile(file: FileWithContext) {
     try {
@@ -96,7 +177,11 @@ export function Manage({ exam }: ManageProps) {
         return;
       }
 
-      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+      setPreviewFile(file);
+      setPreviewUrl(fileUrl);
+      setPreviewMode(resolveFilePreviewMode(file, fileUrl));
+      setImagePreviewError(false);
+      setImageZoom(1);
     } catch {
       toast.error('Falha ao abrir o arquivo.');
     } finally {
@@ -124,14 +209,10 @@ export function Manage({ exam }: ManageProps) {
   async function handleDownloadFile(file: FileWithContext) {
     try {
       setDownloadingFileId(file.id);
-      const fileUrl = await clientService.getExamFileDownloadUrl(file.id);
-
-      if (!fileUrl) {
-        toast.error('Não foi possível gerar o link de download.');
-        return;
-      }
-
-      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+      const { blob, fileName } = await clientService.getExamFileDownloadBlob(file.id);
+      const objectUrl = URL.createObjectURL(blob);
+      triggerAnchorDownload(objectUrl, fileName || file.name || `arquivo-${file.id}`);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     } catch {
       toast.error('Falha ao baixar o arquivo.');
     } finally {
@@ -139,8 +220,29 @@ export function Manage({ exam }: ManageProps) {
     }
   }
 
+  function closeFilePreview() {
+    setPreviewFile(null);
+    setPreviewUrl('');
+    setPreviewMode('unsupported');
+    setImagePreviewError(false);
+    setImageZoom(1);
+  }
+
+  function handleZoomIn() {
+    setImageZoom((current) => Math.min(5, Number((current + 0.25).toFixed(2))));
+  }
+
+  function handleZoomOut() {
+    setImageZoom((current) => Math.max(0.5, Number((current - 0.25).toFixed(2))));
+  }
+
+  function handleZoomReset() {
+    setImageZoom(1);
+  }
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <>
+      <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Eye size={16} />
@@ -194,6 +296,12 @@ export function Manage({ exam }: ManageProps) {
                 <FilePdf className="h-4 w-4" weight="bold" />
               )}
               Vizualizar PDF
+            </Button>
+          </div>
+
+          <div className="flex justify-end">
+            <Button asChild type="button" variant="outline" className="rounded-xl">
+              <Link to={requestNewExamUrl}>Solicitar novo com estes dados</Link>
             </Button>
           </div>
         </div>
@@ -305,7 +413,114 @@ export function Manage({ exam }: ManageProps) {
           </TabsContent>
         </Tabs>
       </SheetContent>
-    </Sheet>
+      </Sheet>
+
+      <Dialog
+        open={Boolean(previewFile)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            closeFilePreview();
+          }
+        }}>
+        <DialogContent className="!max-w-[97vw] w-[97vw] h-[92vh] max-h-[92vh] overflow-hidden border-0 bg-white/95 backdrop-blur-xl">
+          {previewFile && (
+            <div className="h-full flex flex-col gap-4 overflow-hidden">
+              <DialogHeader className="space-y-2">
+                <DialogTitle className="text-xl font-black tracking-tight text-slate-900">
+                  Visualização do arquivo
+                </DialogTitle>
+                <DialogDescription className="text-sm text-slate-500">
+                  {previewFile.name ?? `Arquivo #${previewFile.id}`} • {previewFile.examName}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex-1 min-h-0 rounded-2xl border border-slate-200 bg-slate-50/60 overflow-hidden">
+                {previewMode === 'image' && !imagePreviewError && (
+                  <div className="h-full w-full overflow-auto p-4">
+                    <div className="min-h-full min-w-full flex items-center justify-center">
+                      <img
+                        src={previewUrl}
+                        alt={previewFile.name ?? 'Arquivo'}
+                        className="object-contain"
+                        style={{
+                          width: `${Math.max(25, imageZoom * 100)}%`,
+                          height: `${Math.max(25, imageZoom * 100)}%`,
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                        }}
+                        onError={() => setImagePreviewError(true)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {previewMode === 'pdf' && (
+                  <iframe
+                    src={previewUrl}
+                    title={previewFile.name ?? `Arquivo #${previewFile.id}`}
+                    className="h-full w-full"
+                  />
+                )}
+
+                {(previewMode === 'unsupported' || imagePreviewError) && (
+                  <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-6">
+                    <p className="text-base font-semibold text-slate-800">
+                      Este formato não pode ser visualizado diretamente.
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Faça o download para abrir o arquivo no aplicativo adequado.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-2 items-center">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {previewMode === 'image' && !imagePreviewError && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl h-9 px-3"
+                        onClick={handleZoomOut}>
+                        -
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl h-9 px-3 min-w-[88px]"
+                        onClick={handleZoomReset}>
+                        {Math.round(imageZoom * 100)}%
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl h-9 px-3"
+                        onClick={handleZoomIn}>
+                        +
+                      </Button>
+                    </>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl gap-2"
+                  disabled={downloadingFileId === previewFile.id}
+                  onClick={() => handleDownloadFile(previewFile)}>
+                  {downloadingFileId === previewFile.id ? (
+                    <SpinnerGap className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <DownloadSimple className="h-4 w-4" />
+                  )}
+                  Download
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

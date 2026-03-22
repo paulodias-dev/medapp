@@ -13,14 +13,21 @@ function digitsOnly(value: string | null | undefined): string {
   return (value ?? '').replace(/\D/g, '');
 }
 
-function getCertificateRequestUrl(cpf: string | null): string {
+function getCertificateRequestUrl(patientId: number, cpf: string | null): string {
   const normalizedCpf = digitsOnly(cpf);
-  if (normalizedCpf.length !== 11) {
-    return '/certificate';
-  }
 
   const params = new URLSearchParams();
-  params.set('cpf', normalizedCpf);
+  if (Number.isFinite(patientId) && patientId > 0) {
+    params.set('patientId', String(patientId));
+  }
+
+  if (normalizedCpf.length === 11) {
+    params.set('cpf', normalizedCpf);
+  }
+
+  if (!params.toString()) {
+    return '/certificate';
+  }
 
   return `/certificate?${params.toString()}`;
 }
@@ -114,7 +121,7 @@ export const columns: ColumnDef<ClientPatientListItem>[] = [
     cell: ({ row }) => (
       <div className="flex items-center justify-center gap-2">
         <Button asChild size="sm" variant="outline" className="rounded-xl">
-          <Link to={getCertificateRequestUrl(row.original.cpf)}>Solicitar exame</Link>
+          <Link to={getCertificateRequestUrl(row.original.id, row.original.cpf)}>Solicitar exame</Link>
         </Button>
 
         <Button asChild size="sm" variant="ghost" className="rounded-xl">

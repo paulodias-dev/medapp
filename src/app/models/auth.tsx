@@ -5,7 +5,11 @@ export type AuthProps = {
 
 export type ForgotPasswordProps = {
   cpf_cnpj: string;
-  email: string;
+};
+
+export type ForgotPasswordResponse = {
+  message: string;
+  masked_email?: string;
 };
 
 export type AuthResponseProps = {

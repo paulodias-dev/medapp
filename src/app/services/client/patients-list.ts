@@ -51,3 +51,13 @@ export async function getPatientByCpf(cpf: string): Promise<ClientPatientListIte
     null
   );
 }
+
+export async function getPatientById(id: number | string): Promise<ClientPatientListItem | null> {
+  const numericId = Number(id);
+  if (!Number.isFinite(numericId) || numericId <= 0) {
+    return null;
+  }
+
+  const { data } = await api.get<{ patient?: ClientPatientListItem }>(`client/patients/${numericId}`);
+  return data?.patient ?? null;
+}

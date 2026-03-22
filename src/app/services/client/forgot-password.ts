@@ -1,11 +1,11 @@
-import { ForgotPasswordProps } from '@/app/models';
+import { ForgotPasswordProps, ForgotPasswordResponse } from '@/app/models';
 
 import { api } from '..';
 
 export async function forgotPassword(
   params: ForgotPasswordProps,
-): Promise<string> {
-  const { data } = await api.post(`/client/forgot-password`, params);
+): Promise<ForgotPasswordResponse> {
+  const { data } = await api.post<ForgotPasswordResponse>(`/client/forgot-password`, params);
 
-  return data.message;
+  return data;
 }

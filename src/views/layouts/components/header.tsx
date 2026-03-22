@@ -1,4 +1,8 @@
 import { useAuth } from '@/app/context/use-auth';
+import {
+  getUnreadLaudoNotificationsCount,
+  LAUDO_NOTIFICATIONS_UPDATED_EVENT,
+} from '@/app/realtime/laudo-notifications';
 import { clientService } from '@/app/services/client';
 import { resolveClientAvatarUrl } from '@/app/utils';
 import { getStoredActiveTenantId } from '@/app/utils/auth-storage';
@@ -34,12 +38,13 @@ import {
   SpinnerGap,
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const queryClient = useQueryClient();
   const { user, switchTenant, signOut } = useAuth();
 
@@ -75,6 +80,44 @@ export function Header() {
       profile?.id ??
       0
   );
+
+  useEffect(() => {
+    if (!Number.isFinite(activeTenantId) || activeTenantId <= 0) {
+      setUnreadNotifications(0);
+      return;
+    }
+
+    const updateUnreadCount = () => {
+      setUnreadNotifications(getUnreadLaudoNotificationsCount(activeTenantId));
+    };
+
+    updateUnreadCount();
+
+    const handleNotificationsUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ tenantId?: number; unreadCount?: number }>;
+      const tenantId = Number(customEvent.detail?.tenantId ?? 0);
+
+      if (tenantId === activeTenantId) {
+        setUnreadNotifications(Number(customEvent.detail?.unreadCount ?? 0));
+      }
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (!event.key || !event.key.includes('@medapp:laudo-notifications')) {
+        return;
+      }
+
+      updateUnreadCount();
+    };
+
+    window.addEventListener(LAUDO_NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener(LAUDO_NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [activeTenantId]);
 
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -296,7 +339,14 @@ export function Header() {
                       <Lightning size={18} weight="fill" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-bold text-sm text-slate-700">Notificações</span>
+                      <span className="font-bold text-sm text-slate-700 inline-flex items-center gap-2">
+                        Notificações
+                        {unreadNotifications > 0 && (
+                          <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                            {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                          </span>
+                        )}
+                      </span>
                       <span className="text-[10px] text-slate-400 font-bold">Comunicados e atualizações</span>
                     </div>
                   </Link>

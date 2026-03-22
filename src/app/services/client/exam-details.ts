@@ -182,6 +182,30 @@ export async function getExamFileDownloadUrl(
   return resolveAbsoluteUrl(data);
 }
 
+export async function getExamFileDownloadBlob(
+  fileId: number | string,
+): Promise<{ blob: Blob; fileName: string }> {
+  const { signal } = new AbortController();
+
+  const response = await api.get<Blob>(`/client/fileDownloadBinaryById/${fileId}`, {
+    signal,
+    responseType: 'blob',
+  });
+
+  const dispositionHeader = (response.headers?.['content-disposition'] ??
+    response.headers?.['Content-Disposition'] ??
+    '') as string;
+
+  const match = dispositionHeader.match(/filename\*?=(?:UTF-8''|\"?)([^\";\n]+)/i);
+  const decodedName = match?.[1] ? decodeURIComponent(match[1].replace(/"/g, '')) : '';
+  const fallbackName = `arquivo-${String(fileId)}`;
+
+  return {
+    blob: response.data,
+    fileName: decodedName || fallbackName,
+  };
+}
+
 export async function getExamPdfBlob(id: number | string): Promise<Blob> {
   const { signal } = new AbortController();
 

@@ -41,7 +41,22 @@ export function EmployeeDataStep() {
   const [lookupMessage, setLookupMessage] = useState('');
   const [showFieldErrors, setShowFieldErrors] = useState(false);
   const lastSearchedCpfRef = useRef('');
+  const hasAppliedPrefillPatientRef = useRef(false);
   const hasAppliedPrefillCpfRef = useRef(false);
+  const patientIdFromQuery = useMemo(() => {
+    const rawPatientId = searchParams.get('patientId');
+    if (!rawPatientId) {
+      return null;
+    }
+
+    const parsed = Number(rawPatientId);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return null;
+    }
+
+    return parsed;
+  }, [searchParams]);
+
   const cpfFromQuery = useMemo(() => {
     const normalizedCpf = digitsOnly(searchParams.get('cpf') ?? '');
     if (normalizedCpf.length !== 11 || !isValidCpf(normalizedCpf)) {
@@ -70,6 +85,29 @@ export function EmployeeDataStep() {
     setStepData('employee', mapPatientAutofill(employee as AppointmentEmployeeForm, patient));
   };
 
+  const { mutate: lookupPatientByIdMutate } = useMutation({
+    mutationFn: (patientId: number) => clientService.getPatientById(patientId),
+    onMutate: () => {
+      setLookupState('searching');
+      setLookupMessage('Buscando colaborador selecionado...');
+    },
+    onSuccess: (patient) => {
+      if (!patient) {
+        setLookupState('not_found');
+        setLookupMessage('Colaborador não encontrado para este atalho.');
+        return;
+      }
+
+      applyPatientAutofill(patient);
+      setLookupState('found');
+      setLookupMessage(`Colaborador encontrado: ${patient.name}. Dados preenchidos automaticamente.`);
+    },
+    onError: () => {
+      setLookupState('error');
+      setLookupMessage('Não foi possível buscar o colaborador selecionado.');
+    },
+  });
+
   const { mutate: lookupPatientByCpfMutate } = useMutation({
     mutationFn: (cpf: string) => clientService.getPatientByCpf(cpf),
     onMutate: () => {
@@ -93,6 +131,19 @@ export function EmployeeDataStep() {
       setLookupMessage('Não foi possível consultar o CPF neste momento.');
     },
   });
+
+  useEffect(() => {
+    if (hasAppliedPrefillPatientRef.current) {
+      return;
+    }
+
+    if (!patientIdFromQuery) {
+      return;
+    }
+
+    hasAppliedPrefillPatientRef.current = true;
+    lookupPatientByIdMutate(patientIdFromQuery);
+  }, [lookupPatientByIdMutate, patientIdFromQuery]);
 
   useEffect(() => {
     if (hasAppliedPrefillCpfRef.current) {

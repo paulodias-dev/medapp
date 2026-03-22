@@ -9,6 +9,7 @@ import { ArrowUpRight, SpinnerGap } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
@@ -19,11 +20,6 @@ const schema = z.object({
     })
     .min(1, { message: 'Insira valores nesse campo.' })
     .refine((value: string) => isValidCpfOrCnpj(value), 'Digite um CPF ou CNPJ válido.'),
-  email: z
-    .string({
-      required_error: 'Esse campo não pode ser nulo.',
-    })
-    .email('Insira um e-mail válido.'),
 });
 
 export function ForgotPassword() {
@@ -31,20 +27,24 @@ export function ForgotPassword() {
     resolver: zodResolver(schema),
     defaultValues: {
       cpf_cnpj: '',
-      email: '',
     },
   });
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (props: ForgotPasswordProps) => {
       const data = await clientService.forgotPassword(props);
-      toast.success(data);
+      toast.success(data.message || 'Solicitação enviada com sucesso.');
     },
     onError: (error: unknown) => {
       const errorMessage = resolveApiErrorMessage(error);
-      toast.error('Falha ao autenticar. Tente novamente.', {
+      const lowerMessage = errorMessage.toLowerCase();
+
+      toast.error(
+        lowerMessage.includes('desativada') ? 'Conta desativada' : 'Não foi possível recuperar a senha.',
+        {
         description: errorMessage,
-      });
+        },
+      );
     },
   });
 
@@ -81,18 +81,6 @@ export function ForgotPassword() {
                   required
                 />
 
-                <InputFormItem
-                  control={form.control}
-                  name="email"
-                  label="E-mail"
-                  type="email"
-                  className="h-fit px-4 py-2 text-base"
-                  tabIndex={2}
-                  placeholder="Digite o seu e-mail"
-                  description="Insira o e-mail cadastrado para receber o link de redefinição de senha."
-                  required
-                />
-
                 <Button
                   type="submit"
                   className="w-full rounded-xl flex items-center justify-between gap-1 sm:!h-11"
@@ -103,6 +91,10 @@ export function ForgotPassword() {
                   ) : (
                     <ArrowUpRight />
                   )}
+                </Button>
+
+                <Button asChild type="button" variant="ghost" className="w-full rounded-xl">
+                  <Link to="/auth">Voltar ao login</Link>
                 </Button>
               </form>
             </Form>

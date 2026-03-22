@@ -23,7 +23,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { DownloadSimple, FunnelSimple, X } from '@phosphor-icons/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { columns } from './columns';
@@ -60,6 +60,7 @@ export function Certificates() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchValue, setSearchValue] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -221,6 +222,19 @@ export function Certificates() {
     dateTo !== '' ||
     patientIdFilter !== null;
 
+  useEffect(() => {
+    if (searchParams.get('focus') !== 'search') {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    }, 60);
+
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-16">
       <div className="bg-white border-b border-slate-100 sticky top-20 z-10">
@@ -254,6 +268,7 @@ export function Certificates() {
 
             <div className="flex w-full lg:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Input
+                ref={searchInputRef}
                 className="h-10 w-full sm:w-72 rounded-xl border-slate-200 text-sm"
                 placeholder="Pesquisar por colaborador..."
                 value={searchValue}

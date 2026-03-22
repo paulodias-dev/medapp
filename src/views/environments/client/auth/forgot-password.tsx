@@ -1,5 +1,6 @@
 import { ForgotPasswordProps } from '@/app/models';
 import { clientService } from '@/app/services/client';
+import { cpfCnpjMask } from '@/app/utils';
 import { digitsOnly, isValidCpfOrCnpj } from '@/app/utils/document-validator';
 import { Button } from '@/views/components/ui/button';
 import { Form } from '@/views/components/ui/form';
@@ -58,7 +59,7 @@ export function ForgotPassword() {
   return (
     <div className="min-h-screen bg-slate-50/50 flex">
       <div className="relative flex w-full flex-col items-center justify-center gap-8 px-4 sm:px-6 py-8 lg:w-2/5">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-[420px]">
           <div className="flex flex-col items-center gap-20">
             <img
               src="/grupo-ssma.png"
@@ -67,35 +68,46 @@ export function ForgotPassword() {
 
             <Form {...form}>
               <form
-                className="animate-slidein400 opacity-0 flex flex-col gap-4 my-4 border-slate-400"
+                className="animate-slidein400 opacity-0 w-full min-h-[260px] flex flex-col gap-4 my-4 border-slate-400"
                 onSubmit={form.handleSubmit(onSubmit)}>
-                <InputFormItem
-                  control={form.control}
-                  name="cpf_cnpj"
-                  label="CPF/CNPJ"
-                  type="text"
-                  className="h-fit px-4 py-2 text-base"
-                  tabIndex={1}
-                  placeholder="Digite o seu CPF ou CNPJ"
-                  description="Insira o CPF ou CNPJ cadastrado."
-                  required
-                />
+                <div className="flex flex-col gap-4">
+                  <InputFormItem
+                    control={form.control}
+                    name="cpf_cnpj"
+                    label="CPF/CNPJ"
+                    type="text"
+                    className="w-full h-fit px-4 py-2 text-base"
+                    onChange={(e) => {
+                      form.setValue('cpf_cnpj', cpfCnpjMask(e.target.value));
+                    }}
+                    tabIndex={1}
+                    placeholder="Insira seu CPF ou CNPJ"
+                    description="Insira o CPF ou CNPJ cadastrado."
+                    required
+                  />
 
-                <Button
-                  type="submit"
-                  className="w-full rounded-xl flex items-center justify-between gap-1 sm:!h-11"
-                  disabled={isPending}>
-                  Enviar E-mail
-                  {isPending ? (
-                    <SpinnerGap className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <ArrowUpRight />
-                  )}
-                </Button>
+                  <p className="text-sm text-slate-500">
+                    As instruções de redefinição serão enviadas para o e-mail cadastrado.
+                  </p>
+                </div>
 
-                <Button asChild type="button" variant="ghost" className="w-full rounded-xl">
-                  <Link to="/auth">Voltar ao login</Link>
-                </Button>
+                <div className="mt-auto flex flex-col gap-3">
+                  <Button
+                    type="submit"
+                    className="w-full rounded-xl flex items-center justify-between gap-1 sm:!h-11"
+                    disabled={isPending}>
+                    Enviar E-mail
+                    {isPending ? (
+                      <SpinnerGap className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <ArrowUpRight />
+                    )}
+                  </Button>
+
+                  <Button asChild type="button" variant="ghost" className="w-full rounded-xl">
+                    <Link to="/auth">Voltar ao login</Link>
+                  </Button>
+                </div>
               </form>
             </Form>
           </div>
@@ -123,13 +135,9 @@ export function ForgotPassword() {
       />
 
       <div className="animate-slidein600 opacity-0 items-center justify-center flex-col hidden w-3/5 lg:flex px-6">
-        <div className="h-4 w-[60%] bg-[#cdecff] rounded-t-xl blur-md" />
-        <div className="h-8 w-[80%] backdrop-blur-sm bg-[#cdecff] rounded-t-xl blur-sm" />
-        <img
-          src="/bg-forgot-password.png"
-          alt=""
-          className="w-full max-w-3xl"
-        />
+        <div className="h-4 w-[60%]  bg-[#ECDACB] rounded-t-xl blur-md" />
+        <div className="h-8 w-[80%] backdrop-blur-sm bg-[#ECDACB] rounded-t-xl blur-sm" />
+        <img src="/bg-image-auth.png" alt="" className="w-full max-w-3xl" />
       </div>
     </div>
   );

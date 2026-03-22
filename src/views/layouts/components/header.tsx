@@ -284,7 +284,13 @@ export function Header() {
                       <span className="tracking-tighter">{initials}</span>
                     )}
                   </div>
-                  <div className="absolute -bottom-1 -right-1 h-3 w-3 sm:h-4 sm:w-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm" />
+                  {unreadNotifications > 0 && (
+                    <span
+                      aria-label={`${unreadNotifications} notificações não lidas`}
+                      className="absolute -bottom-1 -right-1 inline-flex min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-red-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:min-w-[20px]">
+                      {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                    </span>
+                  )}
                 </div>
               </button>
             </DropdownMenuTrigger>

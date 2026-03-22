@@ -8,7 +8,7 @@ import { Manage } from './manage';
 
 function getStatusMeta(status: number) {
   if (status === 1) {
-    return { label: 'Aprovado', variant: 'secondary' as const };
+    return { label: 'Realizado', variant: 'secondary' as const };
   }
 
   if (status === 0) {
@@ -16,6 +16,10 @@ function getStatusMeta(status: number) {
   }
 
   if (status === 2) {
+    return { label: 'Arquivado', variant: 'secondary' as const };
+  }
+
+  if (status === 3) {
     return { label: 'Cancelado', variant: 'default' as const };
   }
 

@@ -33,7 +33,7 @@ function getTimelineTypeClass(type?: string): string {
 
 function getStatusMeta(status: number): StatusMeta {
   if (status === 1) {
-    return { label: 'Aprovado', variant: 'secondary' };
+    return { label: 'Realizado', variant: 'secondary' };
   }
 
   if (status === 0) {
@@ -41,6 +41,10 @@ function getStatusMeta(status: number): StatusMeta {
   }
 
   if (status === 2) {
+    return { label: 'Arquivado', variant: 'secondary' };
+  }
+
+  if (status === 3) {
     return { label: 'Cancelado', variant: 'default' };
   }
 

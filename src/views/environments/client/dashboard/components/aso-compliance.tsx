@@ -35,9 +35,9 @@ export function AsoCompliance({
       key: 'total',
     },
     {
-      title: 'ASOs Aprovados',
+      title: 'ASOs Realizados',
       amount: activeAsos,
-      description: 'Status aprovado',
+      description: 'Status realizado',
       bg: 'bg-emerald-50',
       border: 'border-emerald-100',
       amountColor: 'text-emerald-700',

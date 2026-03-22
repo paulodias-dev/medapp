@@ -30,8 +30,9 @@ import { columns } from './columns';
 
 function normalizeStatusLabel(status: number): string {
   if (status === 0) return 'Pendente';
-  if (status === 1) return 'Aprovado';
-  if (status === 2) return 'Cancelado';
+  if (status === 1) return 'Realizado';
+  if (status === 2) return 'Arquivado';
+  if (status === 3) return 'Cancelado';
   return 'Reprovado';
 }
 
@@ -104,7 +105,7 @@ export function Certificates() {
     return examsData.filter((exam) => {
       if (statusFilter !== 'all') {
         if (statusFilter === 'other') {
-          if ([0, 1, 2].includes(Number(exam.status))) {
+          if ([0, 1, 2, 3].includes(Number(exam.status))) {
             return false;
           }
         } else if (String(exam.status) !== statusFilter) {
@@ -339,8 +340,9 @@ export function Certificates() {
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="0">Pendente</SelectItem>
-                  <SelectItem value="1">Aprovado</SelectItem>
-                  <SelectItem value="2">Cancelado</SelectItem>
+                  <SelectItem value="1">Realizado</SelectItem>
+                  <SelectItem value="2">Arquivado</SelectItem>
+                  <SelectItem value="3">Cancelado</SelectItem>
                   <SelectItem value="other">Reprovado/Outros</SelectItem>
                 </SelectContent>
               </Select>

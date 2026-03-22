@@ -123,7 +123,7 @@ export function News() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Novidades e alertas
+              Notificações e alertas
             </h1>
             <p className="text-sm text-slate-500 font-medium">
               Acompanhe notificações de laudos e mudanças de status dos atestados.

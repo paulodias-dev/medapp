@@ -22,6 +22,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { endOfDay } from 'date-fns';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -31,6 +32,7 @@ import { AsoCompliance, AsoFindDialog } from './components';
 export function Dashboard() {
   const { user } = useAuth();
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [searchValue, setSearchValue] = useState('');
 
   const {
     data: warningExams,
@@ -98,7 +100,7 @@ export function Dashboard() {
           </div>
 
           <div className="inline-flex items-center rounded-2xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 shadow-sm">
-            {warningAsos} ASOs vencidos para revisão
+            {warningAsos} {warningAsos === 1 ? 'ASO vencido' : 'ASOs vencidos'} para revisão
           </div>
         </div>
       </div>
@@ -143,10 +145,26 @@ export function Dashboard() {
               <Input
                 className="h-10 w-full sm:w-72 rounded-xl border-slate-200 text-sm"
                 placeholder="Pesquisar por colaborador..."
-                onChange={(event) =>
-                  table.getColumn('nome')?.setFilterValue(event.target.value)
-                }
+                value={searchValue}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setSearchValue(nextValue);
+                  table.getColumn('nome')?.setFilterValue(nextValue);
+                }}
               />
+              {searchValue.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="rounded-xl h-10 px-3 text-slate-600"
+                  onClick={() => {
+                    setSearchValue('');
+                    table.getColumn('nome')?.setFilterValue('');
+                  }}>
+                  <X className="h-4 w-4" />
+                  Limpar
+                </Button>
+              )}
               <Button
                 asChild
                 variant="outline"
@@ -181,7 +199,21 @@ export function Dashboard() {
             </div>
           )}
 
-          {!warningExamsLoading && !warningExamsError && (
+          {!warningExamsLoading && !warningExamsError && warningExamsData.length === 0 && (
+            <div className="px-6 py-12 text-center space-y-2">
+              <p className="text-sm font-semibold text-slate-700">
+                Nenhum ASO vencido no momento.
+              </p>
+              <p className="text-sm text-slate-500">
+                O monitoramento será atualizado automaticamente quando houver novos vencimentos.
+              </p>
+              <Button asChild variant="outline" className="rounded-xl">
+                <Link to="/certificates">Ir para atestados</Link>
+              </Button>
+            </div>
+          )}
+
+          {!warningExamsLoading && !warningExamsError && warningExamsData.length > 0 && (
             <DataTable table={table} columns={columns} />
           )}
         </section>

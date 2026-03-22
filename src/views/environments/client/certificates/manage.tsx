@@ -295,7 +295,7 @@ export function Manage({ exam }: ManageProps) {
               ) : (
                 <FilePdf className="h-4 w-4" weight="bold" />
               )}
-              Vizualizar PDF
+              Visualizar PDF
             </Button>
           </div>
 
@@ -383,6 +383,7 @@ export function Manage({ exam }: ManageProps) {
                           variant="ghost"
                           size="icon"
                           className="rounded-full hover:bg-blue-50 hover:text-blue-600"
+                          title="Visualizar arquivo"
                           onClick={() => handleOpenFile(file)}
                           disabled={openingFileId === file.id}>
                           {openingFileId === file.id ? (
@@ -396,6 +397,7 @@ export function Manage({ exam }: ManageProps) {
                           variant="ghost"
                           size="icon"
                           className="rounded-full hover:bg-emerald-50 hover:text-emerald-600"
+                          title="Baixar arquivo"
                           onClick={() => handleDownloadFile(file)}
                           disabled={downloadingFileId === file.id}>
                           {downloadingFileId === file.id ? (
@@ -551,8 +553,16 @@ function InfoItem({ label, value, icon }: { label: string; value: string; icon?:
 
 
 function FileIcon({ type }: { type: string }) {
-  if (type === 'pdf') return <FilePdf size={24} weight="duotone" />;
-  if (type === 'image') return <ImageIcon size={24} weight="duotone" />;
+  const normalizedType = (type ?? '').toLowerCase();
+
+  if (normalizedType.includes('pdf')) {
+    return <FilePdf size={24} weight="duotone" />;
+  }
+
+  if (normalizedType.includes('image')) {
+    return <ImageIcon size={24} weight="duotone" />;
+  }
+
   return <File size={24} weight="duotone" />;
 }
 

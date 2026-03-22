@@ -128,7 +128,9 @@ export function Employees() {
                 type="button"
                 variant="outline"
                 className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
-                onClick={() => refetch()}>
+                onClick={() => {
+                  void refetch();
+                }}>
                 Tentar novamente
               </Button>
             </div>

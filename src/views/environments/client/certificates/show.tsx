@@ -67,6 +67,14 @@ function getTodayDateInputValue(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function normalizeDateInputValue(value?: string | null): string {
+  if (!value) return getTodayDateInputValue();
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return getTodayDateInputValue();
+  const timezoneOffset = parsed.getTimezoneOffset() * 60_000;
+  return new Date(parsed.getTime() - timezoneOffset).toISOString().slice(0, 10);
+}
+
 function extractRequestedTime(comment?: string | null): string {
   if (!comment) return '';
   const matched = comment.match(/Horário solicitado:\s*([0-2]\d:[0-5]\d)/i);
@@ -166,7 +174,7 @@ export function CertificateShow() {
   });
 
   function openRescheduleDialog() {
-    setRescheduleDate(details?.aso_date ?? getTodayDateInputValue());
+    setRescheduleDate(normalizeDateInputValue(details?.aso_date));
     setRescheduleTime(extractRequestedTime(details?.comment));
     setRescheduleReason('');
     setRescheduleDialogOpen(true);
@@ -327,11 +335,13 @@ export function CertificateShow() {
                   </p>
 
                   <div className="mt-4 space-y-4">
-                    {(details.timeline ?? []).map((event) => (
+                    {(details.timeline ?? []).map((event, index, timeline) => (
                       <div key={`${event.key}-${event.event_at}`} className="flex gap-3">
                         <div className="flex flex-col items-center">
                           <span className={`h-2.5 w-2.5 rounded-full ${getTimelineTypeClass(event.type)}`} />
-                          <span className="mt-1 h-full w-px bg-slate-200" />
+                          {index < timeline.length - 1 && (
+                            <span className="mt-1 h-full w-px bg-slate-200" />
+                          )}
                         </div>
 
                         <div className="pb-3">

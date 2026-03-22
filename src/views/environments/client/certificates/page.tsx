@@ -25,6 +25,7 @@ import {
 import { DownloadSimple, FunnelSimple, X } from '@phosphor-icons/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 import { columns } from './columns';
 
@@ -156,6 +157,7 @@ export function Certificates() {
   const handleExportCsv = () => {
     const rows = table.getFilteredRowModel().rows.map((row) => row.original);
     if (rows.length === 0) {
+      toast.info('Nenhum registro disponível para exportação.');
       return;
     }
 
@@ -389,12 +391,15 @@ export function Certificates() {
               <p className="text-sm text-red-500">
                 Não foi possível carregar a listagem de atestados.
               </p>
-              <button
+              <Button
                 type="button"
-                onClick={() => refetch()}
-                className="inline-flex items-center rounded-xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50">
+                variant="outline"
+                onClick={() => {
+                  void refetch();
+                }}
+                className="rounded-xl border-red-200 text-red-600 hover:bg-red-50">
                 Tentar novamente
-              </button>
+              </Button>
             </div>
           )}
 

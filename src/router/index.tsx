@@ -251,7 +251,7 @@ export function AuthGuard({ isPrivate }: AuthGuardProps) {
   const location = useLocation();
 
   if (!isAuthReady) {
-    return null;
+    return <RouteLoading />;
   }
 
   if (!isAuth && isPrivate) {

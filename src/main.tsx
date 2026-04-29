@@ -12,17 +12,20 @@ setDefaultOptions({ locale: ptBR });
 
 import { Toaster } from '@/views/components/ui/sonner';
 import { AuthProvider } from '@/app/context/use-auth';
+import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import '@/styles/index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <Toaster richColors />
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <Toaster richColors />
+          <QueryClientProvider client={queryClient}>
+            <App />
+          </QueryClientProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>,
 );

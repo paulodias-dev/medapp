@@ -1,0 +1,19 @@
+RewriteEngine On
+
+# Evita content negotiation quebrar rotas de SPA
+Options -MultiViews
+
+# Garante MIME types corretos para módulos JS/CSS (cPanel às vezes vem mal configurado)
+AddType application/javascript .js
+AddType application/javascript .mjs
+AddType text/css .css
+AddType application/json .json
+AddType application/wasm .wasm
+
+# Serve arquivos/pastas existentes
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# SPA: qualquer rota vai pro index.html
+RewriteRule ^ index.html [L]
